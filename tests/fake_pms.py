@@ -73,6 +73,13 @@ class FakePMS:
             return JSONResponse({"error": "unauthorized"}, status_code=401)
         return None
 
+    @staticmethod
+    def _poster_key(rk: str, uri: str) -> str:
+        """Real PMS format: the poster URI URL-encoded inside a ``url`` parameter."""
+        from urllib.parse import quote
+
+        return f"/library/metadata/{rk}/file?url={quote(uri, safe='')}"
+
     def _season_key(self, season: int) -> str:
         return f"2{season}"
 
@@ -103,7 +110,7 @@ class FakePMS:
                 self._next += 1
                 rk = str(self._next)
                 ep = Episode(rk, str(f), int(m.group(1)), int(m.group(2)), title=f.stem)
-                ep.poster_list = [{"key": f"media://{rk}.bundle/Contents/Thumbnails/thumb1.jpg", "selected": True}]
+                ep.poster_list = [{"key": self._poster_key(rk, f"media://2/{rk}.bundle/Contents/Thumbnails/thumb1.jpg"), "selected": True}]
                 self.episodes[rk] = ep
         return Response(status_code=200)
 
@@ -147,7 +154,8 @@ class FakePMS:
             else:
                 for entry in e.poster_list:
                     entry["selected"] = False
-                e.poster_list.append({"key": f"upload://posters/{len(e.posters)}", "selected": True})
+                uri = f"upload://posters/seasons/{e.season}/episodes/{e.index}/{len(e.posters)}"
+                e.poster_list.append({"key": self._poster_key(rk, uri), "selected": True})
         return Response(status_code=200)
 
     async def poster_list(self, request: Request):

@@ -30,6 +30,15 @@ class PlexItem:
     grandparent_title: str | None = None
 
 
+def poster_uri(key: str) -> str:
+    """The poster URI a PMS poster key refers to: the decoded ``url`` query parameter if
+    present (``/library/metadata/{rk}/file?url=upload%3A%2F%2F…``), else the unquoted key."""
+    from urllib.parse import parse_qs, unquote, urlsplit
+
+    url = parse_qs(urlsplit(key).query).get("url")
+    return url[0] if url else unquote(key)
+
+
 class PlexError(Exception):
     pass
 
@@ -130,11 +139,14 @@ class PlexClient:
         await self._req("POST", f"/library/metadata/{rating_key}/posters", {"url": image_url})
 
     async def poster_selected_upload(self, rating_key: str) -> bool:
-        """REP-5 step 4 verification: is an ``upload://`` poster the selected one?"""
+        """REP-5 step 4 verification: is an ``upload://`` poster the selected one?
+
+        Real PMS returns keys like ``/library/metadata/5655/file?url=upload%3A%2F%2Fposters%2F…``
+        (the poster URI URL-encoded in a ``url`` parameter), so keys are decoded first."""
         resp = await self._req("GET", f"/library/metadata/{rating_key}/posters")
         for md in (resp.json().get("MediaContainer") or {}).get("Metadata") or []:
             selected = md.get("selected")
-            if "upload://" in str(md.get("key", "")) and selected in (True, 1, "1", "true"):
+            if poster_uri(str(md.get("key", ""))).startswith("upload://") and selected in (True, 1, "1", "true"):
                 return True
         return False
 

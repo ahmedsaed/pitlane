@@ -544,7 +544,9 @@ async def test_poster_discarded_then_retried(env, caplog):
         await asyncio.gather(*app.replays.poster_tasks)
     ep = next(e for e in env.pms.episodes.values() if e.index == 1705)
     assert len(ep.posters) == 3 and len(set(ep.posters)) == 1
-    assert [x for x in ep.poster_list if x["selected"]] == [{"key": "upload://posters/3", "selected": True}]
+    selected = [x for x in ep.poster_list if x["selected"]]
+    assert len(selected) == 1 and selected[0]["selected"] is True
+    assert selected[0]["key"] == f"/library/metadata/{ep.rating_key}/file?url=upload%3A%2F%2Fposters%2Fseasons%2F2026%2Fepisodes%2F1705%2F3"
     assert any(rec.getMessage() == "poster verified" and rec.uploads == 3 for rec in caplog.records)
     gets = [c for c in env.pms.calls if c["method"] == "GET" and c["path"].endswith("/posters")]
     assert len(gets) == 3
@@ -570,3 +572,34 @@ def test_production_poster_backoff():
 
     assert POSTER_RETRY_DELAYS == (30.0, 60.0, 120.0, 240.0)
     assert 7 * 60 <= sum(POSTER_RETRY_DELAYS) <= 10 * 60
+
+
+async def test_poster_check_decodes_real_pms_keys(env, caplog):
+    """REP-5 step 4 regression: real PMS lists the uploaded card as
+    ``/library/metadata/5655/file?url=upload%3A%2F%2Fposters%2F…`` (selected: true). A check
+    for the literal text "upload://" never matched it and retried 5 times before giving up."""
+    import logging
+
+    from pitlane.replays.plex import poster_uri
+
+    real = [
+        {"selected": True, "key": "/library/metadata/5655/file?url=upload%3A%2F%2Fposters%2Fseasons%2F2026%2Fepisodes%2F1605%2Fabc123"},
+        {"selected": False, "key": "/library/metadata/5655/file?url=media%3A%2F%2F2%2Fd%2Fabc.bundle%2FContents%2FThumbnails%2Fthumb1.jpg"},
+    ]
+    assert poster_uri(real[0]["key"]).startswith("upload://posters/seasons/2026/episodes/1605/")
+    assert poster_uri(real[1]["key"]).startswith("media://")
+    assert "upload://" not in real[0]["key"]  # why the literal check failed
+
+    app = await env()
+    app.replays.poster_retry_delays = (0.01, 0.01, 0.01, 0.01)
+    with caplog.at_level(logging.INFO, logger="pitlane"):
+        await app.replays.process_file(write_media(env.tmp / "dvr" / "Formula 1 - S2026E1705 - Singapore Grand Prix - Race.ts"))
+        await asyncio.gather(*app.replays.poster_tasks)
+    ep = next(e for e in env.pms.episodes.values() if e.index == 1705)
+    assert all("upload://" not in x["key"] and "url=" in x["key"] for x in ep.poster_list)  # encoded form
+    assert len(ep.posters) == 1  # kept on the first upload → no retries
+    msgs = [r.getMessage() for r in caplog.records]
+    assert "poster verified" in msgs and "poster not kept by Plex; giving up" not in msgs
+    # a selected media:// bundle thumbnail alone is not our card
+    ep.poster_list = [real[1] | {"selected": True}]
+    assert await app.replays.plex.poster_selected_upload(ep.rating_key) is False
