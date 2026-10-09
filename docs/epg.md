@@ -79,6 +79,7 @@ Rules:
 - When two padded windows on the same channel overlap, the earlier programme's `stop` is cut to the later programme's `start`. Programmes never overlap.
 - `<new/>` is set for every session programme, so that "record new episodes only" rules in Plex fire. A single series rule scheduling every session across weekends is **[verified 2026-10-09, real PMS]**. Filler is never marked new.
 - Filler: gaps longer than 0 are filled with programmes titled `{channel name}` with sub-title `Next: {next session title} – {local time}`, split at midnight UTC, each at most 6 h long. This fills the guide without flooding Plex with entries.
+- Filler MUST be presented as TV programming, not as a movie. Observed: a filler programme without an episode number is offered by Plex DVR only with **movie** libraries as recording destination **[verified 2026-10-09, real PMS]**. Give filler a `<category>Series</category>` and a date-based episode number `<episode-num system="original-air-date">YYYY-MM-DD HH:MM:SS</episode-num>` (programme start, UTC) **[verify]**: confirm with Plex documentation and the acceptance test that Plex then treats it as an episode. Filler must still never be marked `<new/>`, and must keep its channel-name title so it never joins the `Formula 1` series rule.
 - Channel IDs are `{channel_id}.pitlane` and stay stable (LIVE-2).
 - Window: `epg.days_back` (default 1) through `epg.days_ahead` (default 14).
 - Output is deterministic (sorted by channel, then start time; fixed attribute order), so golden-file tests work.

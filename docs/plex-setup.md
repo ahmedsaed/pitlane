@@ -45,7 +45,9 @@ Because every session shares the series title and has unique S/E numbers, this o
 ## 4. Replay library
 
 1. Create a TV Shows library pointing at `/library` (or include `/library/Formula 1` in an existing TV library).
-2. Agent: Plex Series. Enable "Use local assets". Episode sorting: oldest first.
+2. Agent: **Personal Media Shows** (local only). Do not use an online agent such as Plex Series: it matches the folder `Formula 1` to an unrelated online show (observed: *Formula 1: Drive to Survive*), renames the show, and Pitlane can then no longer find its episodes **[verified 2026-10-09, real PMS]**. Episode sorting: oldest first.
+   - Create a second TV library (e.g. "F1 Recordings") on a separate folder as the **DVR destination**, and list that folder in `replays.inboxes`. Recordings must not land inside `library_root`, because Pitlane ignores files that are already in the library.
+   - Mount the F1 folders at the **same container paths** in Pitlane and Plex: Pitlane sends paths to Plex for targeted scans and has no path mapping.
 3. Put the library's section ID in `plex.library_section_id`. The Pitlane UI lists your libraries to help you find it.
 
 ## 5. Optional: spoiler user

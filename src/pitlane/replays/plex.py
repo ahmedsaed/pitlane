@@ -129,6 +129,15 @@ class PlexClient:
     async def set_poster(self, rating_key: str, image_url: str) -> None:
         await self._req("POST", f"/library/metadata/{rating_key}/posters", {"url": image_url})
 
+    async def poster_selected_upload(self, rating_key: str) -> bool:
+        """REP-5 step 4 verification: is an ``upload://`` poster the selected one?"""
+        resp = await self._req("GET", f"/library/metadata/{rating_key}/posters")
+        for md in (resp.json().get("MediaContainer") or {}).get("Metadata") or []:
+            selected = md.get("selected")
+            if "upload://" in str(md.get("key", "")) and selected in (True, 1, "1", "true"):
+                return True
+        return False
+
     async def set_title(self, rating_key: str, type_: int, title: str) -> None:
         params = {"type": type_, "id": rating_key, "title.value": title, "title.locked": 1}
         await self._req("PUT", f"/library/sections/{self.section_id}/all", params)

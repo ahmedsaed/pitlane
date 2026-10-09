@@ -45,6 +45,7 @@ class Programme:
     is_filler: bool = False
     official_start: datetime | None = None
     next_label: str | None = None  # for filler sub-titles
+    original_air_date: datetime | None = None  # filler: date-based episode number
 
     @property
     def onscreen(self) -> str | None:
@@ -207,6 +208,11 @@ def _fillers(
                     title=ch.name,
                     # QA-002: no next session known → no sub-title.
                     sub_title=f"Next: {_next_label(nxt, tz)}" if nxt is not None else None,
+                    # docs/epg.md: filler is presented as TV programming, not a movie
+                    # (category Series + date-based episode number). Never <new/>, and the
+                    # channel-name title keeps it out of the series rule.
+                    categories=("Series",),
+                    original_air_date=t,
                     is_filler=True,
                 )
             )
@@ -278,6 +284,9 @@ def render_xmltv(cfg: Config, calendars: dict[str, Calendar], now: datetime, bas
             if p.xmltv_ns:
                 lines.append(f'    <episode-num system="xmltv_ns">{p.xmltv_ns}</episode-num>')
                 lines.append(f'    <episode-num system="onscreen">{p.onscreen}</episode-num>')
+            if p.original_air_date:
+                oad = p.original_air_date.astimezone(UTC).strftime("%Y-%m-%d %H:%M:%S")
+                lines.append(f'    <episode-num system="original-air-date">{oad}</episode-num>')
             if p.new and not p.is_filler:
                 lines.append("    <new/>")
             lines.append("  </programme>")

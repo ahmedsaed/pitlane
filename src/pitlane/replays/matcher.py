@@ -136,6 +136,10 @@ class Matcher:
 
         # (a) episode number in the filename or in container tags.
         ep = parse_episode(path.name) or _episode_from_tags(tags)
+        if ep is None:
+            ep, note = self._seasonless_dvr_episode(path, tags)
+            if note:
+                candidates.append(note)
         if ep:
             m = self._from_episode(cal, ep[0], ep[1], path)
             if isinstance(m, Match):
@@ -187,6 +191,28 @@ class Matcher:
         assert ev is not None
         return Match(ev, s.type, s, s.episode_no, s.title, "assignment")
 
+    def _seasonless_dvr_episode(self, path: Path, tags: dict) -> tuple[tuple[int, int] | None, str | None]:
+        """docs/replays.md step 1: Plex DVR names recordings ``Formula 1 - E1703 - …``
+        without a season. Accept ``E(\\d{3,4})`` right after the series title when the
+        season comes unambiguously from the parent folder (``Season 2026``) or, failing
+        that, from the year of the recording start (creation_time, else mtime)."""
+        m = re.match(rf"^\s*{re.escape(self.series_title)}\s*[-–—]\s*E(\d{{3,4}})(?![0-9])", path.stem, re.IGNORECASE)
+        if not m:
+            return None, None
+        episode_no = int(m.group(1))
+        seasons = {int(x) for x in re.findall(r"(?i)^season\s+(\d{4})$", path.parent.name)}
+        if len(seasons) == 1:
+            return (seasons.pop(), episode_no), None
+        when = _creation_time(tags)
+        if when is None:
+            try:
+                when = datetime.fromtimestamp(path.stat().st_mtime, UTC)
+            except OSError:
+                when = None
+        if when is not None:
+            return (when.year, episode_no), None
+        return None, f"episode E{episode_no}: season unknown"
+
     def _from_episode(self, cal: Calendar, season: int, episode_no: int, path: Path) -> Match | str:
         rnd, slot = divmod(episode_no, 100)
         ev = cal.event_by_round(season, rnd)
@@ -220,7 +246,7 @@ class Matcher:
 
 def _title_after_episode(stem: str, ev: Event) -> str | None:
     """``Show - S2026E1711 - Singapore Grand Prix – Pre-Race Build-Up`` → ``Pre-Race Build-Up``."""
-    m = EPISODE_RE.search(stem)
+    m = EPISODE_RE.search(stem) or re.search(r"(?i)(?<![A-Za-z0-9])E\d{3,4}(?![0-9])", stem)
     if not m:
         return None
     rest = stem[m.end() :].strip(" -–—_.")

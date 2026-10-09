@@ -29,7 +29,8 @@ class Episode:
     summary: str = ""
     view_count: int = 0
     locked: set[str] = field(default_factory=set)
-    posters: list[str] = field(default_factory=list)
+    posters: list[str] = field(default_factory=list)  # every upload URL received
+    poster_list: list[dict] = field(default_factory=list)  # what GET …/posters returns
 
 
 class FakePMS:
@@ -44,12 +45,16 @@ class FakePMS:
         self.deleted: list[str] = []
         self.user_views: dict[str, dict[str, int]] = {}  # token → ratingKey → viewCount
         self._next = 1000
+        # Simulates PMS discarding uploads made while it still processes a new item:
+        # the next N uploads return 200, are recorded, but are not kept.
+        self.discard_uploads = 0
         self.app = Starlette(
             routes=[
                 Route("/library/sections/{sid}/refresh", self.refresh, methods=["GET"]),
                 Route("/library/sections/{sid}/all", self.all_get, methods=["GET"]),
                 Route("/library/sections/{sid}/all", self.all_put, methods=["PUT"]),
                 Route("/library/metadata/{rk}/posters", self.posters, methods=["POST"]),
+                Route("/library/metadata/{rk}/posters", self.poster_list, methods=["GET"]),
                 Route("/library/metadata/{rk}", self.metadata, methods=["GET"]),
                 Route("/library/metadata/{rk}", self.delete, methods=["DELETE"]),
             ]
@@ -97,7 +102,9 @@ class FakePMS:
                     continue
                 self._next += 1
                 rk = str(self._next)
-                self.episodes[rk] = Episode(rk, str(f), int(m.group(1)), int(m.group(2)), title=f.stem)
+                ep = Episode(rk, str(f), int(m.group(1)), int(m.group(2)), title=f.stem)
+                ep.poster_list = [{"key": f"media://{rk}.bundle/Contents/Thumbnails/thumb1.jpg", "selected": True}]
+                self.episodes[rk] = ep
         return Response(status_code=200)
 
     async def all_get(self, request: Request):
@@ -132,8 +139,24 @@ class FakePMS:
             return err
         rk = request.path_params["rk"]
         if rk in self.episodes:
-            self.episodes[rk].posters.append(request.query_params.get("url", ""))
+            e = self.episodes[rk]
+            url = request.query_params.get("url", "")
+            e.posters.append(url)
+            if self.discard_uploads > 0:
+                self.discard_uploads -= 1  # 200, card "fetched", but not kept
+            else:
+                for entry in e.poster_list:
+                    entry["selected"] = False
+                e.poster_list.append({"key": f"upload://posters/{len(e.posters)}", "selected": True})
         return Response(status_code=200)
+
+    async def poster_list(self, request: Request):
+        if err := self._record(request):
+            return err
+        e = self.episodes.get(request.path_params["rk"])
+        if e is None:
+            return JSONResponse({"MediaContainer": {"size": 0}}, status_code=404)
+        return JSONResponse({"MediaContainer": {"size": len(e.poster_list), "Metadata": e.poster_list}})
 
     async def metadata(self, request: Request):
         if err := self._record(request):

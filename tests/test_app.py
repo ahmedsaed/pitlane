@@ -162,3 +162,12 @@ def test_cli_check_config(tmp_path, capsys):
 def test_cli_entrypoint_runs():
     r = subprocess.run([sys.executable, "-m", "pitlane", "--config", "/nonexistent.yaml", "check-config"], capture_output=True, text=True)
     assert r.returncode == 2 and "/nonexistent.yaml" in r.stderr
+
+
+async def test_title_cards_reachable_without_ui_password(client):
+    """REP-5 step 4: PMS fetches cards from advertised_url without credentials, so
+    /static/cards/… must stay outside the dashboard password (cards are spoiler-safe)."""
+    assert client.pl.cfg.server.ui_password  # the fixture sets a UI password
+    assert (await client.get("/")).status_code == 401
+    r = await client.get("/static/cards/2026-17/1705.png")  # no Authorization header
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 import subprocess
 from datetime import UTC, datetime
@@ -439,3 +440,133 @@ async def test_identical_content_for_different_session_goes_to_review(env, caplo
     assert Path(filed["target"]).read_bytes() == data  # existing item untouched
     eps = [getattr(rec, "episode", None) for rec in caplog.records if getattr(rec, "file", None) == quali.name]
     assert 1204 in eps and 1705 not in eps
+
+
+# ------------------------------------------------------------------ DVR names without season (step 1)
+
+DVR_NAME = "Formula 1 - E1703 - Singapore Grand Prix – Sprint.ts"
+
+
+async def _matcher(calendar, tags=None):
+    from pitlane.xmltv import session_window
+
+    cfg = parse_config({}, environ={})
+
+    async def probe(p):
+        return (tags or {}).get(p.name, {})
+
+    return Matcher(lambda: calendar, lambda s: session_window(s, cfg), probe=probe)
+
+
+async def test_dvr_name_without_season_parent_folder(calendar_2026, tmp_path):
+    # Season from the parent folder; the file's mtime (1970) must not be used.
+    p = write_media(tmp_path / "Formula 1" / "Season 2026" / DVR_NAME)
+    os.utime(p, (0, 0))
+    r = await (await _matcher(calendar_2026)).match(p)
+    # Step 1 trusts the episode number: E1703 is round 17, slot 3 (FP3 on the
+    # normal-weekend fixture calendar), regardless of the words after it.
+    assert isinstance(r, Match) and r.step == "episode" and r.session.id == "2026-17-FP3"
+
+
+async def test_dvr_name_without_season_uses_recording_start_year(calendar_2026, tmp_path):
+    p = write_media(tmp_path / "dvr" / DVR_NAME)
+    tags = {DVR_NAME: {"creation_time": "2026-10-10T09:20:00Z"}}
+    r = await (await _matcher(calendar_2026, tags)).match(p)
+    assert isinstance(r, Match) and r.step == "episode" and r.session.id == "2026-17-FP3"
+    # no creation_time: mtime year as the last resort
+    p2 = write_media(tmp_path / "dvr2" / DVR_NAME)
+    ts = datetime(2026, 10, 10, 11, tzinfo=UTC).timestamp()
+    os.utime(p2, (ts, ts))
+    r2 = await (await _matcher(calendar_2026)).match(p2)
+    assert isinstance(r2, Match) and r2.session.id == "2026-17-FP3"
+
+
+async def test_dvr_name_without_season_falls_through(calendar_2026, tmp_path):
+    # Recording-start year with no such episode → step 1 doesn't match; steps 2/3 run.
+    p = write_media(tmp_path / "dvr" / DVR_NAME)
+    os.utime(p, (0, 0))
+    r = await (await _matcher(calendar_2026)).match(p)
+    assert isinstance(r, NoMatch)
+    assert any("S1970E1703" in c for c in r.candidates)
+    # A conflicting "Season" folder that isn't a season name is ignored, not guessed from.
+    p2 = write_media(tmp_path / "Season two" / "Formula 1 - E1705 - Singapore Grand Prix – Race.ts")
+    ts = datetime(2026, 10, 11, 12, 30, tzinfo=UTC).timestamp()
+    os.utime(p2, (ts, ts))
+    r2 = await (await _matcher(calendar_2026)).match(p2)
+    assert isinstance(r2, Match) and r2.session.id == "2026-17-RACE"
+
+
+async def test_dvr_seasonless_recording_filed_end_to_end(env):
+    app = await env()
+    p = write_media(env.tmp / "dvr" / "Formula 1" / "Season 2026" / "Formula 1 - E1705 - Singapore Grand Prix – Race.ts")
+    r = await app.replays.process_file(p)
+    assert r["outcome"] == "filed" and r["step"] == "episode" and r["episode_no"] == 1705
+    assert r["target"].endswith("Formula 1 - S2026E1705 - Singapore Grand Prix - Race.ts")
+
+
+# ------------------------------------------------------------------ SUPP duplicate decision
+
+
+async def test_identical_supp_same_event_is_already_filed(env):
+    """docs/replays.md (Matching rules): "If an incoming SUPP file is byte-identical to a
+    SUPP item already filed for the same event, that existing path counts as its own
+    target ("already filed", REP-3), not as a duplicate"."""
+    app = await env()
+    data = os.urandom(4096)
+    first = write_media(env.tmp / "inbox" / "F1 2026 British Grand Prix Pre-Race Build-Up.mkv", content=data)
+    r1 = await app.replays.process_file(first)
+    assert r1["outcome"] == "filed" and r1["episode_no"] == 1211
+    again = write_media(env.tmp / "inbox" / "again" / "2026 British Grand Prix Build Up show.mkv", content=data)
+    r2 = await app.replays.process_file(again)
+    assert r2["outcome"] == "already_filed" and r2["target"] == r1["target"] and r2["episode_no"] == 1211
+    assert not again.exists()  # move mode: identical to its own target → deleted
+    assert len(list((env.tmp / "library").rglob("*.mkv"))) == 1
+    assert app.state.one("SELECT COUNT(*) AS n FROM review_items")["n"] == 0
+    # Identical SUPP content arriving as a different event's item is a duplicate (REP-3).
+    other = write_media(env.tmp / "inbox" / "x" / "F1 2026 Singapore Grand Prix Pre-Race Build-Up.mkv", content=data)
+    r3 = await app.replays.process_file(other)
+    assert r3["outcome"] == "needs_review" and r3["reason"] == "duplicate"
+
+
+# ------------------------------------------------------------------ poster verification (REP-5 step 4)
+
+
+async def test_poster_discarded_then_retried(env, caplog):
+    import logging
+
+    app = await env()
+    app.replays.poster_retry_delays = (0.05, 0.1, 0.2, 0.4)
+    env.pms.discard_uploads = 2  # PMS still processing the new item: first two uploads dropped
+    with caplog.at_level(logging.INFO, logger="pitlane"):
+        r = await app.replays.process_file(write_media(env.tmp / "dvr" / "Formula 1 - S2026E1705 - Singapore Grand Prix - Race.ts"))
+        assert r["outcome"] == "filed"
+        assert app.replays.poster_tasks  # verification runs in the background, not in the pipeline
+        await asyncio.gather(*app.replays.poster_tasks)
+    ep = next(e for e in env.pms.episodes.values() if e.index == 1705)
+    assert len(ep.posters) == 3 and len(set(ep.posters)) == 1
+    assert [x for x in ep.poster_list if x["selected"]] == [{"key": "upload://posters/3", "selected": True}]
+    assert any(rec.getMessage() == "poster verified" and rec.uploads == 3 for rec in caplog.records)
+    gets = [c for c in env.pms.calls if c["method"] == "GET" and c["path"].endswith("/posters")]
+    assert len(gets) == 3
+
+
+async def test_poster_gives_up_with_warning(env, caplog):
+    import logging
+
+    app = await env()
+    app.replays.poster_retry_delays = (0.01, 0.01, 0.01, 0.01)
+    env.pms.discard_uploads = 100
+    with caplog.at_level(logging.INFO, logger="pitlane"):
+        await app.replays.process_file(write_media(env.tmp / "dvr" / "Formula 1 - S2026E1704 - Singapore Grand Prix - Qualifying.ts"))
+        await asyncio.gather(*app.replays.poster_tasks)
+    ep = next(e for e in env.pms.episodes.values() if e.index == 1704)
+    assert len(ep.posters) == 5  # first upload + 4 retries (30/60/120/240 s in production)
+    warn = [rec for rec in caplog.records if rec.getMessage() == "poster not kept by Plex; giving up"]
+    assert len(warn) == 1 and warn[0].levelname == "WARNING"
+
+
+def test_production_poster_backoff():
+    from pitlane.replays.pipeline import POSTER_RETRY_DELAYS
+
+    assert POSTER_RETRY_DELAYS == (30.0, 60.0, 120.0, 240.0)
+    assert 7 * 60 <= sum(POSTER_RETRY_DELAYS) <= 10 * 60

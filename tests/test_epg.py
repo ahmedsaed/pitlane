@@ -244,3 +244,26 @@ def test_escaping():
     out = render_xmltv(cfg, {}, datetime(2026, 1, 1, tzinfo=UTC), BASE)
     ET.fromstring(out)
     assert b"Tom &amp; &lt;Jerry&gt;" in out
+
+
+def test_filler_is_presented_as_tv(calendar_2026):
+    """docs/epg.md: filler gets <category>Series</category> and a date-based
+    original-air-date episode number (programme start, UTC); never <new/>; keeps the
+    channel-name title so it never joins the "Formula 1" series rule."""
+    cfg = make_cfg()
+    out = render_xmltv(cfg, {"f1": calendar_2026}, datetime(2026, 10, 9, 8, tzinfo=UTC), BASE)
+    root = ET.fromstring(out)
+    names = {c.get("id"): c.findtext("display-name") for c in root.findall("channel")}
+    fillers = [p for p in root.findall("programme") if p.findtext("title") != "Formula 1"]
+    assert fillers
+    for p in fillers:
+        assert p.findtext("title") == names[p.get("channel")]
+        assert [c.text for c in p.findall("category")] == ["Series"]
+        start = datetime.strptime(p.get("start"), "%Y%m%d%H%M%S %z")
+        oad = p.find("episode-num[@system='original-air-date']")
+        assert oad is not None and oad.text == start.strftime("%Y-%m-%d %H:%M:%S")
+        assert p.find("new") is None
+        assert p.find("episode-num[@system='xmltv_ns']") is None
+    sessions = [p for p in root.findall("programme") if p.findtext("title") == "Formula 1"]
+    assert all(p.find("episode-num[@system='original-air-date']") is None for p in sessions)
+    assert all("Series" not in [c.text for c in p.findall("category")] for p in sessions)
