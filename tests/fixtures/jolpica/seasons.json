@@ -1,0 +1,26 @@
+{
+  "MRData": {
+    "xmlns": "",
+    "series": "f1",
+    "url": "https://example.invalid/ergast/f1/",
+    "limit": "30",
+    "offset": "0",
+    "total": "3",
+    "SeasonTable": {
+      "Seasons": [
+        {
+          "season": "2024",
+          "url": "https://example.invalid/2024"
+        },
+        {
+          "season": "2025",
+          "url": "https://example.invalid/2025"
+        },
+        {
+          "season": "2026",
+          "url": "https://example.invalid/2026"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,155 @@
+"""PMS HTTP API client (REP-5, REP-6, REP-8; docs/replays.md "Plex metadata").
+
+All PMS endpoints live in this one class so they are easy to change if PMS
+behavior differs from the documentation [verify]. The token is sent in the
+``X-Plex-Token`` header (never in URLs, so it cannot leak into logs).
+"""
+
+from __future__ import annotations
+
+import asyncio
+import time
+from dataclasses import dataclass
+from pathlib import PurePath
+from typing import Any
+
+import httpx
+
+from ..http import FetchClient, FetchPolicy
+from ..logging import get_logger
+
+log = get_logger("plex")
+
+
+@dataclass
+class PlexItem:
+    rating_key: str
+    title: str | None
+    view_count: int
+    files: list[str]
+    grandparent_title: str | None = None
+
+
+class PlexError(Exception):
+    pass
+
+
+class PlexClient:
+    def __init__(self, http: FetchClient, url: str, token: str, section_id: int, policy: FetchPolicy | None = None):
+        self.http = http
+        self.url = url.rstrip("/")
+        self.token = token
+        self.section_id = section_id
+        self.policy = policy or FetchPolicy(timeout=15, retries=2, backoff=1, rate_limit_per_sec=10)
+
+    def _headers(self, token: str | None = None) -> dict[str, str]:
+        return {"X-Plex-Token": token or self.token, "Accept": "application/json"}
+
+    async def _req(self, method: str, path: str, params: dict[str, Any] | None = None, token: str | None = None) -> httpx.Response:
+        return await self.http.request(
+            method,
+            f"{self.url}{path}",
+            policy=self.policy,
+            headers=self._headers(token),
+            params={k: str(v) for k, v in (params or {}).items()},
+        )
+
+    # ------------------------------------------------------------------ scan + lookup
+    async def scan_folder(self, folder: str) -> None:
+        """Targeted scan of one folder only: ``GET /library/sections/{id}/refresh?path=…``."""
+        await self._req("GET", f"/library/sections/{self.section_id}/refresh", {"path": folder})
+
+    @staticmethod
+    def _items(doc: dict) -> list[PlexItem]:
+        out = []
+        for md in (doc.get("MediaContainer") or {}).get("Metadata") or []:
+            files = [p.get("file", "") for media in md.get("Media") or [] for p in media.get("Part") or []]
+            out.append(
+                PlexItem(
+                    rating_key=str(md.get("ratingKey")),
+                    title=md.get("title"),
+                    view_count=int(md.get("viewCount") or 0),
+                    files=files,
+                    grandparent_title=md.get("grandparentTitle"),
+                )
+            )
+        return out
+
+    async def find_episode(self, season: int, episode_no: int, filename: str, show_title: str) -> PlexItem | None:
+        resp = await self._req(
+            "GET",
+            f"/library/sections/{self.section_id}/all",
+            {"type": 4, "episode.index": episode_no, "season.index": season},
+        )
+        items = self._items(resp.json())
+        hits = [
+            i
+            for i in items
+            if (i.grandparent_title in (None, show_title))
+            and (not i.files or any(PurePath(f).name == filename for f in i.files))
+        ]
+        return hits[0] if len(hits) == 1 else None
+
+    async def wait_for_episode(
+        self, season: int, episode_no: int, filename: str, show_title: str, timeout: float = 300.0, first_delay: float = 1.0
+    ) -> PlexItem | None:
+        """Poll with backoff until the item appears (timeout 5 min)."""
+        deadline = time.monotonic() + timeout
+        delay = first_delay
+        while True:
+            try:
+                item = await self.find_episode(season, episode_no, filename, show_title)
+                if item:
+                    return item
+            except httpx.HTTPError as e:
+                log.warning("plex lookup failed", extra={"error": str(e)})
+            if time.monotonic() + delay > deadline:
+                return None
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 30)
+
+    # ------------------------------------------------------------------ metadata
+    async def set_episode_metadata(self, rating_key: str, title: str, summary: str, date: str) -> None:
+        params = {
+            "type": 4,
+            "id": rating_key,
+            "title.value": title,
+            "title.locked": 1,
+            "summary.value": summary,
+            "summary.locked": 1,
+            "originallyAvailableAt.value": date,
+            "originallyAvailableAt.locked": 1,
+        }
+        await self._req("PUT", f"/library/sections/{self.section_id}/all", params)
+
+    async def set_summary(self, rating_key: str, summary: str) -> None:
+        params = {"type": 4, "id": rating_key, "summary.value": summary, "summary.locked": 1}
+        await self._req("PUT", f"/library/sections/{self.section_id}/all", params)
+
+    async def set_poster(self, rating_key: str, image_url: str) -> None:
+        await self._req("POST", f"/library/metadata/{rating_key}/posters", {"url": image_url})
+
+    async def set_title(self, rating_key: str, type_: int, title: str) -> None:
+        params = {"type": type_, "id": rating_key, "title.value": title, "title.locked": 1}
+        await self._req("PUT", f"/library/sections/{self.section_id}/all", params)
+
+    async def metadata(self, rating_key: str, token: str | None = None) -> PlexItem | None:
+        resp = await self._req("GET", f"/library/metadata/{rating_key}", token=token)
+        items = self._items(resp.json())
+        return items[0] if items else None
+
+    async def view_count(self, rating_key: str, token: str | None = None) -> int:
+        item = await self.metadata(rating_key, token=token)
+        return item.view_count if item else 0
+
+    async def item_parents(self, rating_key: str) -> tuple[str | None, str | None]:
+        """(showKey, seasonKey) of an episode."""
+        resp = await self._req("GET", f"/library/metadata/{rating_key}")
+        md = ((resp.json().get("MediaContainer") or {}).get("Metadata") or [{}])[0]
+        gp = md.get("grandparentRatingKey")
+        p = md.get("parentRatingKey")
+        return (str(gp) if gp else None, str(p) if p else None)
+
+    async def delete_item(self, rating_key: str) -> None:
+        """REP-8: deletion goes through PMS so the library stays consistent."""
+        await self._req("DELETE", f"/library/metadata/{rating_key}")

@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tv SYSTEM "xmltv.dtd">
+<tv generator-info-name="Pitlane">
+  <channel id="f1-alt.pitlane">
+    <display-name>F1 Alternate</display-name>
+    <display-name>102</display-name>
+  </channel>
+  <channel id="f1-main.pitlane">
+    <display-name>F1 Main Feed</display-name>
+    <display-name>101</display-name>
+    <icon src="http://192.168.1.10:5004/static/logos/f1-main.png"/>
+  </channel>
+  <channel id="news.pitlane">
+    <display-name>Paddock News</display-name>
+    <display-name>200</display-name>
+  </channel>
+  <programme start="20261022000000 +0000" stop="20261022060000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261022060000 +0000" stop="20261022120000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261022120000 +0000" stop="20261022180000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261022180000 +0000" stop="20261023000000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261023000000 +0000" stop="20261023060000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261023060000 +0000" stop="20261023120000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261023120000 +0000" stop="20261023172000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261023172000 +0000" stop="20261023184000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">United States Grand Prix – Practice 1</sub-title>
+    <desc lang="en">Round 18 of the 2026 season at Circuit of the Americas, USA.</desc>
+    <date>20261023</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1800.</episode-num>
+    <episode-num system="onscreen">S2026E1801</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261023184000 +0000" stop="20261023212000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint Qualifying – Fri 23 Oct 22:30 BST</sub-title>
+  </programme>
+  <programme start="20261023212000 +0000" stop="20261023222500 +0000" channel="f1-alt.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">United States Grand Prix – Sprint Qualifying</sub-title>
+    <desc lang="en">Round 18 of the 2026 season at Circuit of the Americas, USA.</desc>
+    <date>20261023</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1801.</episode-num>
+    <episode-num system="onscreen">S2026E1802</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261023222500 +0000" stop="20261024000000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+  </programme>
+  <programme start="20261024000000 +0000" stop="20261024060000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+  </programme>
+  <programme start="20261024060000 +0000" stop="20261024120000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+  </programme>
+  <programme start="20261024120000 +0000" stop="20261024175000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+  </programme>
+  <programme start="20261024175000 +0000" stop="20261024191000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">United States Grand Prix – Sprint</sub-title>
+    <desc lang="en">Round 18 of the 2026 season at Circuit of the Americas, USA.</desc>
+    <date>20261024</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1802.</episode-num>
+    <episode-num system="onscreen">S2026E1803</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261024191000 +0000" stop="20261024215000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Qualifying – Sat 24 Oct 23:00 BST</sub-title>
+  </programme>
+  <programme start="20261024215000 +0000" stop="20261024231000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">United States Grand Prix – Qualifying</sub-title>
+    <desc lang="en">Round 18 of the 2026 season at Circuit of the Americas, USA.</desc>
+    <date>20261024</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1803.</episode-num>
+    <episode-num system="onscreen">S2026E1804</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261024231000 +0000" stop="20261025000000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
+  </programme>
+  <programme start="20261025000000 +0000" stop="20261025060000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
+  </programme>
+  <programme start="20261025060000 +0000" stop="20261025120000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
+  </programme>
+  <programme start="20261025120000 +0000" stop="20261025180000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
+  </programme>
+  <programme start="20261025180000 +0000" stop="20261025185000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
+  </programme>
+  <programme start="20261025185000 +0000" stop="20261025212000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">United States Grand Prix – Race</sub-title>
+    <desc lang="en">Round 18 of the 2026 season at Circuit of the Americas, USA.</desc>
+    <date>20261025</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1804.</episode-num>
+    <episode-num system="onscreen">S2026E1805</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261025212000 +0000" stop="20261026000000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+  </programme>
+  <programme start="20261026000000 +0000" stop="20261026060000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+  </programme>
+  <programme start="20261026060000 +0000" stop="20261026120000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+  </programme>
+  <programme start="20261026120000 +0000" stop="20261026180000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+  </programme>
+  <programme start="20261026180000 +0000" stop="20261027000000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+  </programme>
+  <programme start="20261022000000 +0000" stop="20261022060000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261022060000 +0000" stop="20261022120000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261022120000 +0000" stop="20261022180000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261022180000 +0000" stop="20261023000000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261023000000 +0000" stop="20261023060000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261023060000 +0000" stop="20261023120000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261023120000 +0000" stop="20261023172000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+  </programme>
+  <programme start="20261023172000 +0000" stop="20261023184000 +0000" channel="f1-main.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">United States Grand Prix – Practice 1</sub-title>
+    <desc lang="en">Round 18 of the 2026 season at Circuit of the Americas, USA.</desc>
+    <date>20261023</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1800.</episode-num>
+    <episode-num system="onscreen">S2026E1801</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261023184000 +0000" stop="20261023212000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint Qualifying – Fri 23 Oct 22:30 BST</sub-title>
+  </programme>
+  <programme start="20261023212000 +0000" stop="20261023222500 +0000" channel="f1-main.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">United States Grand Prix – Sprint Qualifying</sub-title>
+    <desc lang="en">Round 18 of the 2026 season at Circuit of the Americas, USA.</desc>
+    <date>20261023</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1801.</episode-num>
+    <episode-num system="onscreen">S2026E1802</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261023222500 +0000" stop="20261024000000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+  </programme>
+  <programme start="20261024000000 +0000" stop="20261024060000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+  </programme>
+  <programme start="20261024060000 +0000" stop="20261024120000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+  </programme>
+  <programme start="20261024120000 +0000" stop="20261024175000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+  </programme>
+  <programme start="20261024175000 +0000" stop="20261024191000 +0000" channel="f1-main.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">United States Grand Prix – Sprint</sub-title>
+    <desc lang="en">Round 18 of the 2026 season at Circuit of the Americas, USA.</desc>
+    <date>20261024</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1802.</episode-num>
+    <episode-num system="onscreen">S2026E1803</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261024191000 +0000" stop="20261024215000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Qualifying – Sat 24 Oct 23:00 BST</sub-title>
+  </programme>
+  <programme start="20261024215000 +0000" stop="20261024231000 +0000" channel="f1-main.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">United States Grand Prix – Qualifying</sub-title>
+    <desc lang="en">Round 18 of the 2026 season at Circuit of the Americas, USA.</desc>
+    <date>20261024</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1803.</episode-num>
+    <episode-num system="onscreen">S2026E1804</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261024231000 +0000" stop="20261025000000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Pre-Race Build-Up – Sun 25 Oct 17:30 GMT</sub-title>
+  </programme>
+  <programme start="20261025000000 +0000" stop="20261025060000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Pre-Race Build-Up – Sun 25 Oct 17:30 GMT</sub-title>
+  </programme>
+  <programme start="20261025060000 +0000" stop="20261025120000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Pre-Race Build-Up – Sun 25 Oct 17:30 GMT</sub-title>
+  </programme>
+  <programme start="20261025120000 +0000" stop="20261025173000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Pre-Race Build-Up – Sun 25 Oct 17:30 GMT</sub-title>
+  </programme>
+  <programme start="20261025173000 +0000" stop="20261025184500 +0000" channel="f1-main.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">United States Grand Prix – Pre-Race Build-Up</sub-title>
+    <desc lang="en">Round 18 of the 2026 season at Circuit of the Americas, USA.</desc>
+    <date>20261025</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1810.</episode-num>
+    <episode-num system="onscreen">S2026E1811</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261025184500 +0000" stop="20261025185000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
+  </programme>
+  <programme start="20261025185000 +0000" stop="20261025212000 +0000" channel="f1-main.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">United States Grand Prix – Race</sub-title>
+    <desc lang="en">Round 18 of the 2026 season at Circuit of the Americas, USA.</desc>
+    <date>20261025</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1804.</episode-num>
+    <episode-num system="onscreen">S2026E1805</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261025212000 +0000" stop="20261026000000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+  </programme>
+  <programme start="20261026000000 +0000" stop="20261026060000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+  </programme>
+  <programme start="20261026060000 +0000" stop="20261026120000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+  </programme>
+  <programme start="20261026120000 +0000" stop="20261026180000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+  </programme>
+  <programme start="20261026180000 +0000" stop="20261027000000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+  </programme>
+  <programme start="20261022000000 +0000" stop="20261022060000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261022060000 +0000" stop="20261022120000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261022120000 +0000" stop="20261022180000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261022180000 +0000" stop="20261023000000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261023000000 +0000" stop="20261023060000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261023060000 +0000" stop="20261023120000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261023120000 +0000" stop="20261023180000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261023180000 +0000" stop="20261024000000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261024000000 +0000" stop="20261024060000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261024060000 +0000" stop="20261024120000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261024120000 +0000" stop="20261024180000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261024180000 +0000" stop="20261025000000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261025000000 +0000" stop="20261025060000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261025060000 +0000" stop="20261025120000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261025120000 +0000" stop="20261025180000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261025180000 +0000" stop="20261026000000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261026000000 +0000" stop="20261026060000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261026060000 +0000" stop="20261026120000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261026120000 +0000" stop="20261026180000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261026180000 +0000" stop="20261027000000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+</tv>

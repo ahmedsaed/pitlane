@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pitlane"
+version = "0.1.0"
+description = "Self-hosted bridge between operator-configured motorsport video sources and Plex Media Server"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "httpx>=0.27",
+    "pydantic>=2.6",
+    "pyyaml>=6",
+    "watchfiles>=0.21",
+    "rapidfuzz>=3",
+    "prometheus-client>=0.20",
+    "psutil>=5.9",
+    "pillow>=10.1",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pytest-asyncio>=0.23", "jsonschema>=4"]
+
+[project.scripts]
+pitlane = "pitlane.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pitlane = ["web/templates/*.html", "py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "ffmpeg: needs the ffmpeg binary",
+]

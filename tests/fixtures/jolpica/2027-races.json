@@ -1,0 +1,14 @@
+{
+  "MRData": {
+    "xmlns": "",
+    "series": "f1",
+    "url": "https://example.invalid/ergast/f1/",
+    "limit": "30",
+    "offset": "0",
+    "total": "0",
+    "RaceTable": {
+      "season": "2027",
+      "Races": []
+    }
+  }
+}

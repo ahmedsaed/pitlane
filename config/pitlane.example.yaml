@@ -1,0 +1,108 @@
+# Pitlane example configuration (docs/configuration.md).
+# You are responsible for having the rights to every source you configure.
+# All URLs use example.invalid; replace them with your own sources.
+server:
+  bind: 0.0.0.0:5004                 # NFR-8: warns if this resolves to a public interface
+  advertised_url: http://192.168.1.10:5004
+  ui_password: ${file:/config/ui_password}
+  data_dir: /data
+  log_level: info
+
+tuners:
+  count: 2
+  tune_timeout: 10s
+  stall_timeout: 8s
+  device_name: Pitlane
+
+health:
+  interval: 5m
+  interval_near_session: 1m          # within 30 min of a session
+  probe_timeout: 6s
+  degraded_latency_ms: 2500
+
+series:
+  f1:
+    title: Formula 1
+    calendar: jolpica
+    seasons: auto                    # current season (+ next one once it is published)
+
+channels:
+  - id: f1-main
+    guide_number: 101
+    name: F1 Main Feed
+    logo: /config/logos/f1-main.png
+    series: [f1]
+    transcode: null                  # or "720p"
+  - id: f1-alt
+    guide_number: 102
+    name: F1 Alternate
+    series: [f1]
+
+providers:
+  - type: m3u
+    name: my-iptv
+    url: ${file:/config/iptv_url}
+    refresh: 6h
+    map:
+      - match: { tvg-id: "f1\\.main" }
+        channel: f1-main
+        priority: 10
+  - type: channel-json
+    name: mine
+    path: /config/channels.json
+  - type: hdhomerun
+    name: antenna
+    device: http://192.168.1.50
+    map:
+      - match: { GuideName: "^Channel 4" }
+        channel: f1-alt
+        priority: 10
+  - type: directory
+    name: drop
+    path: /inbox/drop
+
+epg:
+  days_back: 1
+  days_ahead: 14
+  pre_roll: 10m
+  post_roll: { default: 10m, RACE: 20m }
+  durations: { FP1: 60m, FP2: 60m, FP3: 60m, SQ: 45m, SPRINT: 60m, QUALI: 60m, RACE: 120m }
+  filler_max: 6h
+  manual: []
+
+replays:
+  inboxes:
+    - /dvr
+    - /inbox
+  library_root: /library
+  file_mode: move                   # move | hardlink | copy
+  remux_to: null                    # null | mkv | mp4
+  supplementary_mode: episodes      # episodes | extras
+  needs_review_dir: /inbox/needs-review
+  poll:
+    every: 30m
+    until_after_race: 72h
+  downloads:
+    concurrency: 1
+    window: null                    # e.g. "01:00-07:00"
+    prefer_provider_over_dvr: false
+
+spoiler:
+  enabled: true
+  reveal_after_watch: true
+
+plex:
+  url: http://192.168.1.10:32400
+  token: ${PITLANE_PLEX_TOKEN}
+  library_section_id: 7
+  spoiler_user: null
+  spoiler_token: ${file:/config/spoiler_token}
+
+retention:
+  enabled: false
+  dry_run: true
+  keep: { RACE: all, QUALI: all, SPRINT: all, SQ: 2, FP1: 1, FP2: 1, FP3: 1, SUPP: 1 }
+
+plugins:
+  dir: /config/plugins
+  enabled: []                        # plugin PROVIDER_TYPE names to allow

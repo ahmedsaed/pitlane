@@ -1,0 +1,220 @@
+{
+  "MRData": {
+    "xmlns": "",
+    "series": "f1",
+    "url": "https://example.invalid/ergast/f1/",
+    "limit": "30",
+    "offset": "0",
+    "total": "6",
+    "RaceTable": {
+      "season": "2026",
+      "Races": [
+        {
+          "season": "2026",
+          "round": "1",
+          "url": "https://example.invalid/2026/1",
+          "raceName": "Australian Grand Prix",
+          "Circuit": {
+            "circuitId": "albert_park",
+            "url": "https://example.invalid/circuits/albert_park",
+            "circuitName": "Albert Park Grand Prix Circuit",
+            "Location": {
+              "lat": "0.0",
+              "long": "0.0",
+              "locality": "Melbourne",
+              "country": "Australia"
+            }
+          },
+          "date": "2026-03-08",
+          "time": "04:00:00Z",
+          "FirstPractice": {
+            "date": "2026-03-06",
+            "time": "01:30:00Z"
+          },
+          "SecondPractice": {
+            "date": "2026-03-06",
+            "time": "05:00:00Z"
+          },
+          "ThirdPractice": {
+            "date": "2026-03-07",
+            "time": "01:30:00Z"
+          },
+          "Qualifying": {
+            "date": "2026-03-07",
+            "time": "05:00:00Z"
+          }
+        },
+        {
+          "season": "2026",
+          "round": "12",
+          "url": "https://example.invalid/2026/12",
+          "raceName": "British Grand Prix",
+          "Circuit": {
+            "circuitId": "silverstone",
+            "url": "https://example.invalid/circuits/silverstone",
+            "circuitName": "Silverstone Circuit",
+            "Location": {
+              "lat": "0.0",
+              "long": "0.0",
+              "locality": "Silverstone",
+              "country": "UK"
+            }
+          },
+          "date": "2026-07-05",
+          "time": "14:00:00Z",
+          "FirstPractice": {
+            "date": "2026-07-03",
+            "time": "11:30:00Z"
+          },
+          "SecondPractice": {
+            "date": "2026-07-03",
+            "time": "15:00:00Z"
+          },
+          "ThirdPractice": {
+            "date": "2026-07-04",
+            "time": "10:30:00Z"
+          },
+          "Qualifying": {
+            "date": "2026-07-04",
+            "time": "14:00:00Z"
+          }
+        },
+        {
+          "season": "2026",
+          "round": "17",
+          "url": "https://example.invalid/2026/17",
+          "raceName": "Singapore Grand Prix",
+          "Circuit": {
+            "circuitId": "marina_bay",
+            "url": "https://example.invalid/circuits/marina_bay",
+            "circuitName": "Marina Bay Street Circuit",
+            "Location": {
+              "lat": "0.0",
+              "long": "0.0",
+              "locality": "Marina Bay",
+              "country": "Singapore"
+            }
+          },
+          "date": "2026-10-11",
+          "time": "12:00:00Z",
+          "FirstPractice": {
+            "date": "2026-10-09",
+            "time": "09:30:00Z"
+          },
+          "SecondPractice": {
+            "date": "2026-10-09",
+            "time": "13:00:00Z"
+          },
+          "ThirdPractice": {
+            "date": "2026-10-10",
+            "time": "09:30:00Z"
+          },
+          "Qualifying": {
+            "date": "2026-10-10",
+            "time": "13:00:00Z"
+          }
+        },
+        {
+          "season": "2026",
+          "round": "18",
+          "url": "https://example.invalid/2026/18",
+          "raceName": "United States Grand Prix",
+          "Circuit": {
+            "circuitId": "americas",
+            "url": "https://example.invalid/circuits/americas",
+            "circuitName": "Circuit of the Americas",
+            "Location": {
+              "lat": "0.0",
+              "long": "0.0",
+              "locality": "Austin",
+              "country": "USA"
+            }
+          },
+          "date": "2026-10-25",
+          "time": "19:00:00Z",
+          "FirstPractice": {
+            "date": "2026-10-23",
+            "time": "17:30:00Z"
+          },
+          "SprintQualifying": {
+            "date": "2026-10-23",
+            "time": "21:30:00Z"
+          },
+          "Sprint": {
+            "date": "2026-10-24",
+            "time": "18:00:00Z"
+          },
+          "Qualifying": {
+            "date": "2026-10-24",
+            "time": "22:00:00Z"
+          }
+        },
+        {
+          "season": "2026",
+          "round": "19",
+          "url": "https://example.invalid/2026/19",
+          "raceName": "Mexico City Grand Prix",
+          "Circuit": {
+            "circuitId": "rodriguez",
+            "url": "https://example.invalid/circuits/rodriguez",
+            "circuitName": "Autódromo Hermanos Rodríguez",
+            "Location": {
+              "lat": "0.0",
+              "long": "0.0",
+              "locality": "Mexico City",
+              "country": "Mexico"
+            }
+          },
+          "date": "2026-11-01",
+          "time": "20:00:00Z",
+          "FirstPractice": {
+            "date": "2026-10-30",
+            "time": "18:30:00Z"
+          },
+          "SecondPractice": {
+            "date": "2026-10-30",
+            "time": "22:00:00Z"
+          },
+          "ThirdPractice": {
+            "date": "2026-10-31",
+            "time": "17:30:00Z"
+          },
+          "Qualifying": {
+            "date": "2026-10-31",
+            "time": "21:00:00Z"
+          }
+        },
+        {
+          "season": "2026",
+          "round": "20",
+          "url": "https://example.invalid/2026/20",
+          "raceName": "São Paulo Grand Prix",
+          "Circuit": {
+            "circuitId": "interlagos",
+            "url": "https://example.invalid/circuits/interlagos",
+            "circuitName": "Autódromo José Carlos Pace",
+            "Location": {
+              "lat": "0.0",
+              "long": "0.0",
+              "locality": "São Paulo",
+              "country": "Brazil"
+            }
+          },
+          "date": "2026-11-08",
+          "FirstPractice": {
+            "date": "2026-11-06"
+          },
+          "SprintQualifying": {
+            "date": "2026-11-06"
+          },
+          "Sprint": {
+            "date": "2026-11-07"
+          },
+          "Qualifying": {
+            "date": "2026-11-07"
+          }
+        }
+      ]
+    }
+  }
+}

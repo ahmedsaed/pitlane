@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/pitlane/schemas/channel-json.v1.json",
+  "title": "Pitlane channel-json provider document, version 1",
+  "description": "Operator-maintained list of live sources for the channel-json provider (docs/providers.md). Unknown fields are ignored.",
+  "type": "object",
+  "required": ["version", "channels"],
+  "properties": {
+    "version": { "const": 1 },
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["channel", "label", "kind", "url"],
+        "properties": {
+          "channel": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "Logical channel id" },
+          "label": { "type": "string" },
+          "kind": { "enum": ["hls", "ts"] },
+          "url": { "type": "string", "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://", "description": "http/https only" },
+          "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+          "priority": { "type": "integer", "default": 100 },
+          "enabled": { "type": "boolean", "default": true }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

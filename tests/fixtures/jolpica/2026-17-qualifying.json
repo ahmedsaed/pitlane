@@ -1,0 +1,89 @@
+{
+  "MRData": {
+    "xmlns": "",
+    "series": "f1",
+    "url": "https://example.invalid/ergast/f1/",
+    "limit": "30",
+    "offset": "0",
+    "total": "4",
+    "RaceTable": {
+      "season": "2026",
+      "round": "17",
+      "Races": [
+        {
+          "season": "2026",
+          "round": "17",
+          "url": "https://example.invalid/2026/17",
+          "raceName": "Singapore Grand Prix",
+          "Circuit": {
+            "circuitId": "marina_bay",
+            "url": "https://example.invalid/circuits/marina_bay",
+            "circuitName": "Marina Bay Street Circuit",
+            "Location": {
+              "lat": "0.0",
+              "long": "0.0",
+              "locality": "Marina Bay",
+              "country": "Singapore"
+            }
+          },
+          "date": "2026-10-11",
+          "time": "12:00:00Z",
+          "QualifyingResults": [
+            {
+              "number": "11",
+              "position": "1",
+              "Driver": {
+                "driverId": "rivera",
+                "givenName": "Alex",
+                "familyName": "Rivera"
+              },
+              "Constructor": {
+                "constructorId": "northwind_racing",
+                "name": "Northwind Racing"
+              }
+            },
+            {
+              "number": "12",
+              "position": "2",
+              "Driver": {
+                "driverId": "kowalski",
+                "givenName": "Bea",
+                "familyName": "Kowalski"
+              },
+              "Constructor": {
+                "constructorId": "helix_motorsport",
+                "name": "Helix Motorsport"
+              }
+            },
+            {
+              "number": "13",
+              "position": "3",
+              "Driver": {
+                "driverId": "dubois",
+                "givenName": "Chen",
+                "familyName": "Dubois"
+              },
+              "Constructor": {
+                "constructorId": "northwind_racing",
+                "name": "Northwind Racing"
+              }
+            },
+            {
+              "number": "14",
+              "position": "4",
+              "Driver": {
+                "driverId": "okafor",
+                "givenName": "Dana",
+                "familyName": "Okafor"
+              },
+              "Constructor": {
+                "constructorId": "vantage_gp",
+                "name": "Vantage GP"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

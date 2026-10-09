@@ -1,0 +1,562 @@
+"""Stream relay (LIVE-3, LIVE-4, LIVE-6, LIVE-7, LIVE-8, LIVE-9; docs/tuner.md).
+
+One ffmpeg child per active stream, in its own process group. Every child is
+owned by an object whose ``aclose()`` sends SIGTERM to the group, waits 3 s,
+then sends SIGKILL, and is always called from a ``finally`` block.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import os
+import shutil
+import signal
+import time
+from collections import deque
+from dataclasses import dataclass, field
+from typing import Any, AsyncIterator, Awaitable, Callable
+
+import httpx
+
+from .channels import LogicalChannel, Source
+from .logging import correlation, get_logger, new_correlation_id
+from .metrics import Metrics
+from .providers.base import OpenedInput, ProviderError, check_opened
+from .state import State, now_iso
+
+log = get_logger("relay")
+
+CHUNK = 64 * 1024
+KILL_GRACE = 3.0
+
+TRANSCODE_PROFILES: dict[str, list[str]] = {
+    # LIVE-8, docs/tuner.md example "720p".
+    "720p": [
+        "-c:v", "libx264", "-preset", "veryfast", "-b:v", "3500k", "-maxrate", "4000k", "-bufsize", "8000k",
+        "-vf", "scale=-2:720", "-c:a", "aac", "-b:a", "160k",
+    ],
+}  # fmt: skip
+
+
+def ffmpeg_binary() -> str:
+    return os.environ.get("PITLANE_FFMPEG") or shutil.which("ffmpeg") or "ffmpeg"
+
+
+def build_ffmpeg_args(
+    kind: str,
+    opened: OpenedInput,
+    *,
+    transcode: str | None = None,
+    loop: bool = False,
+    ffmpeg: str | None = None,
+) -> list[str]:
+    """Build the relay command line (docs/tuner.md "Relay pipeline")."""
+    opened = check_opened(opened)
+    src = opened.url_or_path
+    args = [ffmpeg or ffmpeg_binary(), "-hide_banner", "-loglevel", "warning", "-nostdin"]
+    is_http = src.lower().startswith(("http://", "https://"))
+    if kind == "file":
+        if is_http or not os.path.isabs(src):
+            raise ProviderError("file sources must be absolute local paths")
+        args += ["-re"]
+        if loop:
+            args += ["-stream_loop", "-1"]
+    else:
+        if not is_http:
+            raise ProviderError("network sources must be http(s) URLs")
+        headers = dict(opened.headers)
+        ua = next((headers.pop(k) for k in list(headers) if k.lower() == "user-agent"), None)
+        if headers:
+            args += ["-headers", "".join(f"{k}: {v}\r\n" for k, v in headers.items())]
+        if ua:
+            args += ["-user_agent", ua]
+        args += ["-rw_timeout", "10000000", "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5"]
+    args += opened.ffmpeg_input_args
+    args += ["-i", src, "-map", "0:v:0?", "-map", "0:a?"]
+    if transcode:
+        if transcode not in TRANSCODE_PROFILES:
+            raise ProviderError(f"unknown transcode profile {transcode!r}")
+        args += TRANSCODE_PROFILES[transcode]
+    else:
+        args += ["-c", "copy"]
+    args += ["-f", "mpegts", "-mpegts_flags", "+resend_headers", "-muxdelay", "0", "pipe:1"]
+    return args
+
+
+# --------------------------------------------------------------------------- process ownership
+
+
+class ProcessTracker:
+    """Every live ffmpeg child, so shutdown and tests can verify none are orphaned (LIVE-9, NFR-4)."""
+
+    def __init__(self, metrics: Metrics | None = None) -> None:
+        self.live: set["FfmpegInput"] = set()
+        self.metrics = metrics
+
+    def add(self, p: "FfmpegInput") -> None:
+        self.live.add(p)
+        if self.metrics:
+            self.metrics.ffmpeg_running.set(len(self.live))
+
+    def discard(self, p: "FfmpegInput") -> None:
+        self.live.discard(p)
+        if self.metrics:
+            self.metrics.ffmpeg_running.set(len(self.live))
+
+    async def kill_all(self) -> None:
+        await asyncio.gather(*(p.aclose() for p in list(self.live)), return_exceptions=True)
+
+
+class InputError(Exception):
+    pass
+
+
+class FfmpegInput:
+    """An ffmpeg child whose stdout is MPEG-TS. Use ``async with`` or call ``aclose()``."""
+
+    def __init__(self, args: list[str], tracker: ProcessTracker | None = None) -> None:
+        self.args = args
+        self.tracker = tracker
+        self.proc: asyncio.subprocess.Process | None = None
+        self.stderr_tail: deque[str] = deque(maxlen=20)
+        self._stderr_task: asyncio.Task | None = None
+        self._closed = False
+
+    async def start(self) -> None:
+        self.proc = await asyncio.create_subprocess_exec(
+            *self.args,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            start_new_session=True,  # own process group → whole group can be killed
+        )
+        if self.tracker:
+            self.tracker.add(self)
+        self._stderr_task = asyncio.get_running_loop().create_task(self._drain_stderr())
+
+    async def _drain_stderr(self) -> None:
+        assert self.proc and self.proc.stderr
+        while True:
+            line = await self.proc.stderr.readline()
+            if not line:
+                return
+            text = line.decode(errors="replace").rstrip()
+            if text:
+                self.stderr_tail.append(text)
+                log.debug("ffmpeg", extra={"line": text})
+
+    async def __aenter__(self) -> "FfmpegInput":
+        await self.start()
+        return self
+
+    async def __aexit__(self, *exc: object) -> None:
+        await self.aclose()
+
+    async def read(self, n: int = CHUNK) -> bytes:
+        assert self.proc and self.proc.stdout
+        return await self.proc.stdout.read(n)
+
+    @property
+    def returncode(self) -> int | None:
+        return self.proc.returncode if self.proc else None
+
+    async def wait_exit(self, timeout: float = 2.0) -> int | None:
+        if not self.proc:
+            return None
+        try:
+            return await asyncio.wait_for(self.proc.wait(), timeout)
+        except TimeoutError:
+            return None
+
+    def error_text(self) -> str:
+        return " | ".join(list(self.stderr_tail)[-3:]) or f"ffmpeg exited with {self.returncode}"
+
+    def _signal_group(self, sig: int) -> None:
+        assert self.proc
+        try:
+            os.killpg(self.proc.pid, sig)
+        except (ProcessLookupError, PermissionError):
+            try:
+                self.proc.send_signal(sig)
+            except ProcessLookupError:
+                pass
+
+    async def aclose(self) -> None:
+        """SIGTERM the process group, wait up to 3 s, then SIGKILL (architecture.md)."""
+        if self._closed:
+            return
+        self._closed = True
+        try:
+            if self.proc is not None:
+                if self.proc.returncode is None:
+                    self._signal_group(signal.SIGTERM)
+                    try:
+                        await asyncio.wait_for(asyncio.shield(self.proc.wait()), KILL_GRACE)
+                    except TimeoutError:
+                        self._signal_group(signal.SIGKILL)
+                        await self.proc.wait()
+                else:
+                    # Leader exited; make sure nothing else in its group survives.
+                    try:
+                        os.killpg(self.proc.pid, signal.SIGKILL)
+                    except (ProcessLookupError, PermissionError):
+                        pass
+                if self._stderr_task:
+                    self._stderr_task.cancel()
+                    try:
+                        await self._stderr_task
+                    except (asyncio.CancelledError, Exception):
+                        pass
+                # Close pipe transports so file descriptors are released (NFR-4).
+                transport = getattr(self.proc, "_transport", None)
+                if transport is not None:
+                    transport.close()
+        finally:
+            if self.tracker:
+                self.tracker.discard(self)
+
+
+class HttpInput:
+    """Direct HTTP passthrough for ``tuner`` sources (no ffmpeg, docs/tuner.md)."""
+
+    def __init__(self, client: httpx.AsyncClient, url: str, headers: dict[str, str]) -> None:
+        self.client = client
+        self.url = url
+        self.headers = headers
+        self._cm: Any = None
+        self._resp: httpx.Response | None = None
+        self._it: AsyncIterator[bytes] | None = None
+        self.returncode: int | None = None
+        self._err = ""
+
+    async def start(self) -> None:
+        self._cm = self.client.stream("GET", self.url, headers=self.headers, timeout=httpx.Timeout(10, read=None))
+        self._resp = await self._cm.__aenter__()
+        if self._resp.status_code != 200:
+            self._err = f"HTTP {self._resp.status_code}"
+            self.returncode = 1
+            raise InputError(self._err)
+        self._it = self._resp.aiter_raw(CHUNK)
+
+    async def read(self, n: int = CHUNK) -> bytes:
+        assert self._it is not None
+        try:
+            return await self._it.__anext__()
+        except StopAsyncIteration:
+            self.returncode = 0
+            return b""
+        except httpx.HTTPError as e:
+            self._err = str(e) or e.__class__.__name__
+            self.returncode = 1
+            return b""
+
+    async def wait_exit(self, timeout: float = 0) -> int | None:
+        return self.returncode
+
+    def error_text(self) -> str:
+        return self._err or "upstream closed"
+
+    async def aclose(self) -> None:
+        if self._cm is not None:
+            cm, self._cm = self._cm, None
+            try:
+                await cm.__aexit__(None, None, None)
+            except Exception:
+                pass
+
+
+# --------------------------------------------------------------------------- tuner slots (LIVE-4)
+
+
+class TunerPool:
+    def __init__(self, count: int) -> None:
+        self.count = count
+        self.in_use: dict[str, "StreamSession"] = {}
+
+    def try_acquire(self, session: "StreamSession") -> bool:
+        if len(self.in_use) >= self.count:
+            return False
+        self.in_use[session.id] = session
+        return True
+
+    def release(self, session: "StreamSession") -> None:
+        self.in_use.pop(session.id, None)
+
+
+# --------------------------------------------------------------------------- stream session
+
+
+@dataclass
+class RelayHooks:
+    """Callbacks into the rest of the app (health state, provider lookup)."""
+
+    get_provider: Callable[[str], Any]
+    mark_source: Callable[[Source, str, str | None], None]
+    reprobe: Callable[[Source], None]
+    http_client: httpx.AsyncClient | None = None
+    # LIVE-6: synchronous probe used to re-check offline sources at tune time;
+    # it records the result in the source's health state.
+    probe: Callable[[Source], Awaitable[Any]] | None = None
+
+
+class TuneFailed(Exception):
+    pass
+
+
+@dataclass
+class StreamSession:
+    channel: LogicalChannel
+    sources: list[Source]
+    hooks: RelayHooks
+    metrics: Metrics
+    tracker: ProcessTracker
+    state: State | None
+    tune_timeout: float
+    stall_timeout: float
+    client_addr: str = ""
+    id: str = field(default_factory=lambda: new_correlation_id("stream"))
+    bytes_sent: int = 0
+    failovers: int = 0
+    current: Source | None = None
+    started_at: float = field(default_factory=time.monotonic)
+    _input: Any = None
+    _idx: int = -1
+    _closing: set = field(default_factory=set)
+    offline_sources: list[Source] = field(default_factory=list)  # LIVE-6 last resort
+
+    async def _open_input(self, src: Source) -> Any:
+        provider = self.hooks.get_provider(src.provider)
+        if provider is None:
+            raise InputError("provider not running")
+        opened = check_opened(await provider.open(src.locator))
+        if src.kind == "tuner" and not self.channel.transcode:
+            if self.hooks.http_client is None:
+                raise InputError("no HTTP client for tuner passthrough")
+            inp: Any = HttpInput(self.hooks.http_client, opened.url_or_path, opened.headers)
+        else:
+            args = build_ffmpeg_args(
+                "ts" if src.kind == "tuner" else src.kind, opened, transcode=self.channel.transcode, loop=self.channel.loop
+            )
+            inp = FfmpegInput(args, self.tracker)
+        await inp.start()
+        return inp
+
+    async def _close_input(self, background: bool = False) -> None:
+        """Close the current input. With ``background`` the old process is retired in a
+        tracked task, so failover does not wait for its SIGTERM grace period."""
+        if self._input is not None:
+            inp, self._input = self._input, None
+            if background:
+                t = asyncio.get_running_loop().create_task(inp.aclose())
+                self._closing.add(t)
+                t.add_done_callback(self._closing.discard)
+            else:
+                await inp.aclose()
+
+    async def _fail(self, src: Source, state: str, reason: str) -> None:
+        await self._close_input(background=True)
+        self.hooks.mark_source(src, state, reason)
+        self.hooks.reprobe(src)  # docs/tuner.md: reprobe immediately
+
+    async def _first_bytes(self, deadline: float | None) -> bytes:
+        """Advance through sources until one produces bytes. ``deadline`` applies to tune-in only."""
+        while True:
+            self._idx += 1
+            if self._idx >= len(self.sources):
+                raise TuneFailed("all sources exhausted")
+            src = self.sources[self._idx]
+            prev = self.current
+            self.current = src
+            if prev is not None:
+                self.failovers += 1
+                self.metrics.failovers.labels(channel=self.channel.id).inc()
+                log.warning(
+                    "failover",
+                    extra={"channel": self.channel.id, "from_source": prev.id, "to_source": src.id, "failovers": self.failovers},
+                )
+            limit = self.stall_timeout
+            if deadline is not None:
+                limit = min(limit, deadline - time.monotonic())
+                if limit <= 0:
+                    raise TuneFailed("tune timeout")
+            try:
+                self._input = await asyncio.wait_for(self._open_input(src), limit)
+                data = await asyncio.wait_for(self._input.read(CHUNK), max(0.05, limit - 0.0))
+            except TimeoutError:
+                await self._fail(src, "degraded", f"no data within {limit:.1f}s")
+                continue
+            except (ProviderError, InputError, OSError, httpx.HTTPError) as e:
+                await self._fail(src, "offline", str(e) or e.__class__.__name__)
+                continue
+            if not data:
+                code = await self._input.wait_exit()
+                await self._fail(src, "offline", self._input.error_text() if code else "ended without data")
+                continue
+            log.info("source started", extra={"channel": self.channel.id, "source": src.id, "label": src.label})
+            return data
+
+    async def tune(self) -> bytes:
+        """Start the first working source and return its first chunk (≤ tune_timeout)."""
+        deadline = self.started_at + self.tune_timeout
+        try:
+            data = await self._first_bytes(deadline)
+        except TuneFailed:
+            data = await self._tune_offline(deadline)
+        self.metrics.tune_seconds.observe(time.monotonic() - self.started_at)
+        return data
+
+    async def _tune_offline(self, deadline: float) -> bytes:
+        """LIVE-6: when no online/degraded/unprobed source is left, re-probe the
+        ``offline`` sources in priority order within ``tune_timeout`` and start the
+        first one that passes. Raises :class:`TuneFailed` only if none does."""
+        if self.hooks.probe is None:
+            raise TuneFailed("no usable sources")
+        for src in self.offline_sources:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            try:
+                result = await asyncio.wait_for(self.hooks.probe(src), remaining)
+            except TimeoutError:
+                break
+            if getattr(result, "state", "offline") not in ("online", "degraded"):
+                continue
+            log.info("offline source passed re-probe", extra={"channel": self.channel.id, "source": src.id})
+            self.sources.append(src)
+            self._idx = len(self.sources) - 2
+            try:
+                return await self._first_bytes(deadline)
+            except TuneFailed:
+                continue
+        raise TuneFailed("no usable sources (offline sources re-probed)")
+
+    async def chunks(self) -> AsyncIterator[bytes]:
+        """Subsequent chunks with stall detection and failover (LIVE-7)."""
+        while True:
+            assert self._input is not None and self.current is not None
+            src = self.current
+            try:
+                data = await asyncio.wait_for(self._input.read(CHUNK), self.stall_timeout)
+            except TimeoutError:
+                log.warning("source stalled", extra={"channel": self.channel.id, "source": src.id, "stall_timeout": self.stall_timeout})
+                await self._fail(src, "degraded", f"stalled for {self.stall_timeout:g}s")
+                data = None
+            if data:
+                yield data
+                continue
+            if data is not None:  # EOF
+                code = await self._input.wait_exit()
+                if code:
+                    await self._fail(src, "offline", self._input.error_text())
+                else:
+                    log.info("source ended", extra={"channel": self.channel.id, "source": src.id})
+                    await self._close_input()
+            try:
+                data = await self._first_bytes(None)
+            except TuneFailed:
+                log.warning("all sources exhausted; ending stream", extra={"channel": self.channel.id})
+                return
+            yield data
+
+    def record_start(self) -> None:
+        if self.state:
+            self.state.execute(
+                "INSERT INTO stream_runs(id, channel_id, source_id, client_addr, started_at) VALUES(?,?,?,?,?)",
+                (self.id, self.channel.id, self.current.id if self.current else None, self.client_addr, now_iso()),
+            )
+
+    def record_end(self) -> None:
+        if self.state:
+            self.state.execute(
+                "UPDATE stream_runs SET ended_at=?, bytes=?, failovers=?, source_id=? WHERE id=?",
+                (now_iso(), self.bytes_sent, self.failovers, self.current.id if self.current else None, self.id),
+            )
+
+    async def aclose(self) -> None:
+        await self._close_input()
+        if self._closing:
+            await asyncio.gather(*list(self._closing), return_exceptions=True)
+
+
+class RelayResponse:
+    """ASGI response that streams a :class:`StreamSession`.
+
+    It listens for ``http.disconnect`` itself, so the slot is freed and ffmpeg
+    is killed as soon as the connection closes, not when a later write fails
+    (docs/tuner.md "Tuner slots", LIVE-9).
+    """
+
+    def __init__(self, session: StreamSession, pool: TunerPool, on_done: Callable[[], Awaitable[None]] | None = None):
+        self.session = session
+        self.pool = pool
+        self.on_done = on_done
+
+    async def __call__(self, scope: dict, receive: Callable, send: Callable) -> None:
+        s = self.session
+        with correlation(s.id):
+            log.info("stream requested", extra={"channel": s.channel.id, "client": s.client_addr})
+            pump = asyncio.ensure_future(self._pump(send))
+            listen = asyncio.ensure_future(self._wait_disconnect(receive))
+            try:
+                done, _ = await asyncio.wait({pump, listen}, return_when=asyncio.FIRST_COMPLETED)
+                if listen in done and not pump.done():
+                    log.info("client disconnected", extra={"channel": s.channel.id, "bytes": s.bytes_sent})
+                    self.pool.release(s)  # free the slot immediately
+            finally:
+                for t in (pump, listen):
+                    t.cancel()
+                self.pool.release(s)
+                try:
+                    await asyncio.shield(self._cleanup(pump, listen))
+                except asyncio.CancelledError:
+                    pass
+
+    async def _cleanup(self, pump: asyncio.Future, listen: asyncio.Future) -> None:
+        for t in (pump, listen):
+            try:
+                await t
+            except (asyncio.CancelledError, Exception):
+                pass
+        await self.session.aclose()
+        self.session.metrics.streams_active.set(len(self.pool.in_use))
+        self.session.record_end()
+        log.info(
+            "stream ended",
+            extra={"channel": self.session.channel.id, "bytes": self.session.bytes_sent, "failovers": self.session.failovers},
+        )
+        if self.on_done:
+            await self.on_done()
+
+    @staticmethod
+    async def _wait_disconnect(receive: Callable) -> None:
+        while True:
+            msg = await receive()
+            if msg["type"] == "http.disconnect":
+                return
+
+    async def _pump(self, send: Callable) -> None:
+        s = self.session
+        try:
+            first = await s.tune()
+        except TuneFailed as e:
+            log.warning("tune failed", extra={"channel": s.channel.id, "reason": str(e)})
+            s.metrics.tuner_rejections.inc()
+            body = b"No source could start\n"
+            await send({"type": "http.response.start", "status": 503, "headers": [
+                (b"content-type", b"text/plain"), (b"content-length", str(len(body)).encode())]})  # fmt: skip
+            await send({"type": "http.response.body", "body": body})
+            return
+        s.record_start()
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [(b"content-type", b"video/mp2t"), (b"cache-control", b"no-cache")],
+            }
+        )
+        await send({"type": "http.response.body", "body": first, "more_body": True})
+        s.bytes_sent += len(first)
+        async for chunk in s.chunks():
+            await send({"type": "http.response.body", "body": chunk, "more_body": True})
+            s.bytes_sent += len(chunk)
+        await send({"type": "http.response.body", "body": b"", "more_body": False})

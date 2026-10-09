@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tv SYSTEM "xmltv.dtd">
+<tv generator-info-name="Pitlane">
+  <channel id="f1-alt.pitlane">
+    <display-name>F1 Alternate</display-name>
+    <display-name>102</display-name>
+  </channel>
+  <channel id="f1-main.pitlane">
+    <display-name>F1 Main Feed</display-name>
+    <display-name>101</display-name>
+    <icon src="http://192.168.1.10:5004/static/logos/f1-main.png"/>
+  </channel>
+  <channel id="news.pitlane">
+    <display-name>Paddock News</display-name>
+    <display-name>200</display-name>
+  </channel>
+  <programme start="20261008000000 +0000" stop="20261008060000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261008060000 +0000" stop="20261008120000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261008120000 +0000" stop="20261008180000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261008180000 +0000" stop="20261009000000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261009000000 +0000" stop="20261009060000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261009060000 +0000" stop="20261009092000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261009092000 +0000" stop="20261009104000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">Singapore Grand Prix – Practice 1</sub-title>
+    <desc lang="en">Round 17 of the 2026 season at Marina Bay Street Circuit, Singapore.</desc>
+    <date>20261009</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1700.</episode-num>
+    <episode-num system="onscreen">S2026E1701</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261009104000 +0000" stop="20261009125000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 2 – Fri 09 Oct 13:00 UTC</sub-title>
+  </programme>
+  <programme start="20261009125000 +0000" stop="20261009141000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">Singapore Grand Prix – Practice 2</sub-title>
+    <desc lang="en">Round 17 of the 2026 season at Marina Bay Street Circuit, Singapore.</desc>
+    <date>20261009</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1701.</episode-num>
+    <episode-num system="onscreen">S2026E1702</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261009141000 +0000" stop="20261009201000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261009201000 +0000" stop="20261010000000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261010000000 +0000" stop="20261010060000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261010060000 +0000" stop="20261010092000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261010092000 +0000" stop="20261010104000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">Singapore Grand Prix – Practice 3</sub-title>
+    <desc lang="en">Round 17 of the 2026 season at Marina Bay Street Circuit, Singapore.</desc>
+    <date>20261010</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1702.</episode-num>
+    <episode-num system="onscreen">S2026E1703</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261010104000 +0000" stop="20261010125000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Qualifying – Sat 10 Oct 13:00 UTC</sub-title>
+  </programme>
+  <programme start="20261010125000 +0000" stop="20261010141000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">Singapore Grand Prix – Qualifying</sub-title>
+    <desc lang="en">Round 17 of the 2026 season at Marina Bay Street Circuit, Singapore.</desc>
+    <date>20261010</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1703.</episode-num>
+    <episode-num system="onscreen">S2026E1704</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261010141000 +0000" stop="20261010201000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+  </programme>
+  <programme start="20261010201000 +0000" stop="20261011000000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+  </programme>
+  <programme start="20261011000000 +0000" stop="20261011060000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+  </programme>
+  <programme start="20261011060000 +0000" stop="20261011115000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+  </programme>
+  <programme start="20261011115000 +0000" stop="20261011142000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">Singapore Grand Prix – Race</sub-title>
+    <desc lang="en">Round 17 of the 2026 season at Marina Bay Street Circuit, Singapore.</desc>
+    <date>20261011</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1704.</episode-num>
+    <episode-num system="onscreen">S2026E1705</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261011142000 +0000" stop="20261011202000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261011202000 +0000" stop="20261012000000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261012000000 +0000" stop="20261012060000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261012060000 +0000" stop="20261012120000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261012120000 +0000" stop="20261012180000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261012180000 +0000" stop="20261013000000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261008000000 +0000" stop="20261008060000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261008060000 +0000" stop="20261008120000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261008120000 +0000" stop="20261008180000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261008180000 +0000" stop="20261009000000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261009000000 +0000" stop="20261009060000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261009060000 +0000" stop="20261009092000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261009092000 +0000" stop="20261009104000 +0000" channel="f1-main.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">Singapore Grand Prix – Practice 1</sub-title>
+    <desc lang="en">Round 17 of the 2026 season at Marina Bay Street Circuit, Singapore.</desc>
+    <date>20261009</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1700.</episode-num>
+    <episode-num system="onscreen">S2026E1701</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261009104000 +0000" stop="20261009125000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 2 – Fri 09 Oct 13:00 UTC</sub-title>
+  </programme>
+  <programme start="20261009125000 +0000" stop="20261009141000 +0000" channel="f1-main.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">Singapore Grand Prix – Practice 2</sub-title>
+    <desc lang="en">Round 17 of the 2026 season at Marina Bay Street Circuit, Singapore.</desc>
+    <date>20261009</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1701.</episode-num>
+    <episode-num system="onscreen">S2026E1702</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261009141000 +0000" stop="20261009201000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261009201000 +0000" stop="20261010000000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261010000000 +0000" stop="20261010060000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261010060000 +0000" stop="20261010092000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+  </programme>
+  <programme start="20261010092000 +0000" stop="20261010104000 +0000" channel="f1-main.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">Singapore Grand Prix – Practice 3</sub-title>
+    <desc lang="en">Round 17 of the 2026 season at Marina Bay Street Circuit, Singapore.</desc>
+    <date>20261010</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1702.</episode-num>
+    <episode-num system="onscreen">S2026E1703</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261010104000 +0000" stop="20261010125000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Qualifying – Sat 10 Oct 13:00 UTC</sub-title>
+  </programme>
+  <programme start="20261010125000 +0000" stop="20261010141000 +0000" channel="f1-main.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">Singapore Grand Prix – Qualifying</sub-title>
+    <desc lang="en">Round 17 of the 2026 season at Marina Bay Street Circuit, Singapore.</desc>
+    <date>20261010</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1703.</episode-num>
+    <episode-num system="onscreen">S2026E1704</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261010141000 +0000" stop="20261010201000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+  </programme>
+  <programme start="20261010201000 +0000" stop="20261011000000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+  </programme>
+  <programme start="20261011000000 +0000" stop="20261011060000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+  </programme>
+  <programme start="20261011060000 +0000" stop="20261011115000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+  </programme>
+  <programme start="20261011115000 +0000" stop="20261011142000 +0000" channel="f1-main.pitlane">
+    <title lang="en">Formula 1</title>
+    <sub-title lang="en">Singapore Grand Prix – Race</sub-title>
+    <desc lang="en">Round 17 of the 2026 season at Marina Bay Street Circuit, Singapore.</desc>
+    <date>20261011</date>
+    <category lang="en">Sports</category>
+    <category lang="en">Motorsport</category>
+    <episode-num system="xmltv_ns">2025.1704.</episode-num>
+    <episode-num system="onscreen">S2026E1705</episode-num>
+    <new/>
+  </programme>
+  <programme start="20261011142000 +0000" stop="20261011202000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261011202000 +0000" stop="20261012000000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261012000000 +0000" stop="20261012060000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261012060000 +0000" stop="20261012120000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261012120000 +0000" stop="20261012180000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261012180000 +0000" stop="20261013000000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+  </programme>
+  <programme start="20261008000000 +0000" stop="20261008060000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261008060000 +0000" stop="20261008120000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261008120000 +0000" stop="20261008180000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261008180000 +0000" stop="20261009000000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261009000000 +0000" stop="20261009060000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261009060000 +0000" stop="20261009120000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261009120000 +0000" stop="20261009180000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261009180000 +0000" stop="20261010000000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261010000000 +0000" stop="20261010060000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261010060000 +0000" stop="20261010120000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261010120000 +0000" stop="20261010180000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261010180000 +0000" stop="20261011000000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261011000000 +0000" stop="20261011060000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261011060000 +0000" stop="20261011120000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261011120000 +0000" stop="20261011180000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261011180000 +0000" stop="20261012000000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261012000000 +0000" stop="20261012060000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261012060000 +0000" stop="20261012120000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261012120000 +0000" stop="20261012180000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+  <programme start="20261012180000 +0000" stop="20261013000000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News</title>
+  </programme>
+</tv>

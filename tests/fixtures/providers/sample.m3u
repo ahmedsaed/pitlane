@@ -1,0 +1,9 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="f1.main" tvg-name="F1 Main" tvg-logo="https://example.invalid/logo.png" group-title="Motorsport",F1 Main Feed
+#EXTVLCOPT:http-user-agent=ExampleAgent/1.0
+#EXTVLCOPT:http-referrer=https://example.invalid/
+https://example.invalid/main/index.m3u8
+#EXTINF:-1 tvg-id="f1.main.backup" tvg-name="F1 Main Backup" group-title="Motorsport",F1 Main Backup
+https://example.invalid/backup/stream.ts
+#EXTINF:-1 tvg-id="cooking" tvg-name="Cooking" group-title="Lifestyle",Cooking Channel
+https://example.invalid/cooking/index.m3u8

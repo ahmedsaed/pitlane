@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "comment": "unknown fields are ignored",
+  "channels": [
+    {
+      "channel": "f1-main",
+      "label": "Main feed – primary",
+      "kind": "hls",
+      "url": "https://example.invalid/main/index.m3u8",
+      "headers": { "User-Agent": "Pitlane/1.0" },
+      "priority": 10,
+      "enabled": true
+    },
+    { "channel": "f1-alt", "label": "Alt", "kind": "ts", "url": "https://example.invalid/alt.ts" },
+    { "channel": "f1-alt", "label": "Disabled", "kind": "ts", "url": "https://example.invalid/off.ts", "enabled": false },
+    { "channel": "f1-alt", "label": "Bad scheme", "kind": "hls", "url": "file:///etc/passwd" }
+  ]
+}
