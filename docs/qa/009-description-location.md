@@ -1,5 +1,4 @@
 # 009 – Location shown in descriptions and summaries: country or locality?
-- Asked by: Implementer agent · 2026-10-09
 - Requirement(s): EPG-3, REP-6
 
 ## Question
@@ -8,5 +7,3 @@ The examples read "Marina Bay Street Circuit, Singapore". Jolpica gives both `Lo
 Interim behavior (`# QA-009` in `src/pitlane/xmltv.py` and `src/pitlane/replays/spoilers.py`): `{circuitName}, {country}`.
 
 ## Answer
-- Answered by:
-- Approved by:

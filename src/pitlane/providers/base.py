@@ -144,7 +144,7 @@ _HEADER_NAME_RE = re.compile(r"^[A-Za-z0-9!#$%&'*+.^_`|~-]+$")
 
 
 def validate_headers(headers: dict[str, str]) -> dict[str, str]:
-    """Plain HTTP headers are allowed as a generic feature (clean-room.md §5); reject injection."""
+    """Plain HTTP headers are allowed as a generic feature (docs/providers.md); reject injection."""
     out = {}
     for k, v in (headers or {}).items():
         if not isinstance(k, str) or not isinstance(v, str):

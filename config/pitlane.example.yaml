@@ -1,5 +1,4 @@
 # Pitlane example configuration (docs/configuration.md).
-# You are responsible for having the rights to every source you configure.
 # All URLs use example.invalid; replace them with your own sources.
 server:
   bind: 0.0.0.0:5004                 # NFR-8: warns if this resolves to a public interface

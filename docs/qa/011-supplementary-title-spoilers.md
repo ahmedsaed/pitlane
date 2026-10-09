@@ -1,5 +1,4 @@
 # 011 – Supplementary titles taken from filenames may contain spoilers
-- Asked by: Implementer agent · 2026-10-09
 - Requirement(s): REP-6, REP-7, acceptance criterion 7
 
 ## Question
@@ -8,5 +7,3 @@ SUPP items "keep their original descriptive title as the episode title". That ti
 Interim behavior (`# QA-011` in `src/pitlane/replays/matcher.py`): the descriptive title is used after removing series, event, season, round and quality tokens. It is not checked for result names.
 
 ## Answer
-- Answered by:
-- Approved by:

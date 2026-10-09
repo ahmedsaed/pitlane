@@ -1,5 +1,4 @@
 # 004 – Are manual (supplementary) programmes marked `<new/>`?
-- Asked by: Implementer agent · 2026-10-09
 - Requirement(s): EPG-3, EPG-6, EPG-7
 
 ## Question
@@ -8,5 +7,3 @@
 Interim behavior (`# QA-004` in `src/pitlane/xmltv.py`): manual programmes are marked `<new/>`, use the series title, and use episode number `round × 100 + 10 + supplementary_index`.
 
 ## Answer
-- Answered by:
-- Approved by:

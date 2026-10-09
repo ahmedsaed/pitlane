@@ -1,5 +1,4 @@
 # 012 – Web UI without a password when bound beyond localhost
-- Asked by: Implementer agent · 2026-10-09
 - Requirement(s): OPS-1, NFR-8 (architecture.md "Security")
 
 ## Question
@@ -8,5 +7,3 @@
 Interim behavior (`# QA-012` in `src/pitlane/app.py`): it logs a warning and serves the UI without auth. With `ui_password` set, the UI and `/api/*` require HTTP Basic auth (any user name). Tuner, XMLTV, `/healthz`, `/metrics` and static assets stay open because PMS and monitoring need them.
 
 ## Answer
-- Answered by:
-- Approved by:

@@ -2,8 +2,6 @@
 
 Requirements: Plex Pass, which Plex Live TV & DVR needs; Pitlane reachable from PMS over HTTP; and a configured source for at least one channel.
 
-> You are responsible for having the rights to every source you configure in Pitlane.
-
 ## 1. Run Pitlane
 
 ```bash

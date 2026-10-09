@@ -1,5 +1,4 @@
 # 007 – Configuration keys needed by the spec but missing from `configuration.md`
-- Asked by: Implementer agent · 2026-10-09
 - Requirement(s): PROV-4, OPS-3, LIVE-1, REP-1, REP-5
 
 ## Question
@@ -20,5 +19,3 @@ Also: the spec does not name a default for `server.bind`. The interim default is
 Interim behavior (`# QA-007` in `src/pitlane/config.py`): the keys above, with those defaults.
 
 ## Answer
-- Answered by:
-- Approved by:

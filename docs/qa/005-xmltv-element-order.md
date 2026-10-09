@@ -1,5 +1,4 @@
 # 005 – `<date>` element position differs from the XMLTV DTD
-- Asked by: Implementer agent · 2026-10-09
 - Requirement(s): EPG-3, acceptance criterion 4
 
 ## Question
@@ -8,5 +7,3 @@ The example `<programme>` in `docs/epg.md` puts `<date>` after `<episode-num>`. 
 Interim behavior (`# QA-005` in `src/pitlane/xmltv.py`): DTD order (`title, sub-title, desc, date, category…, episode-num…, new`). The golden files are generated in that order.
 
 ## Answer
-- Answered by:
-- Approved by:

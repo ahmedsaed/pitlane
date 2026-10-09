@@ -1,19 +1,18 @@
-# Implementer Questions
+# Design Questions
 
-Use one file per question: `NNN-short-title.md` (e.g. `001-failover-timestamps.md`).
+Open questions where the spec leaves behavior undecided. Each file records the question, the interim behavior implemented (marked `# QA-NNN` in the code), and the answer once decided. When an answer changes behavior, update `SPEC.md` or the relevant doc as well.
+
+One file per question: `NNN-short-title.md`.
 
 ```markdown
 # NNN – <question title>
-- Asked by: <implementer> · <date>
 - Requirement(s): LIVE-7
 
 ## Question
-<what is unclear, in behavioral terms>
+<what is unclear>
+
+Interim behavior (`# QA-NNN` in `src/pitlane/…`): <what the code does now>
 
 ## Answer
-- Answered by: <spec author> · <date>
-- Approved by: <monitor> · <date>
-<behavioral answer; link the SPEC/doc change that encodes it>
+<decision; link the SPEC/doc change that encodes it>
 ```
-
-Answers must describe required behavior only. Answers that describe how another product works are rejected (`clean-room.md` §2).

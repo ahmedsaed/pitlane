@@ -42,7 +42,7 @@ Rules:
 
 - If a step yields more than one candidate, it does not match. Pitlane moves on to the next step, and if none match, the file goes to `needs-review` with every candidate listed.
 - SUPP items keep their original descriptive title as the episode title and get the next free index in `round × 100 + 11..99`.
-- SUPP items have no fixed target before an index is assigned. If an incoming SUPP file is byte-identical to a SUPP item already filed for the **same event**, that existing path counts as its own target ("already filed", REP-3), not as a `duplicate` (decision recorded from the implementer's question during the REP-3 fix).
+- SUPP items have no fixed target before an index is assigned. If an incoming SUPP file is byte-identical to a SUPP item already filed for the **same event**, that existing path counts as its own target ("already filed", REP-3), not as a `duplicate`.
 - A manual assignment in the UI is saved as a rule keyed on the file hash. Re-processing the same file uses the saved assignment.
 
 ## Library layout (REP-3)

@@ -1,6 +1,6 @@
 # Providers
 
-A provider turns operator configuration into **sources** (live) and **replay items** (replays). Every built-in provider is generic and knows nothing about any particular website (`clean-room.md` §5).
+A provider turns operator configuration into **sources** (live) and **replay items** (replays). Every built-in provider is generic and knows nothing about any particular website.
 
 ## Interface
 

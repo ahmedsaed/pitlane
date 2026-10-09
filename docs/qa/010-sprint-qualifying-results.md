@@ -1,5 +1,4 @@
 # 010 – Results for Sprint Qualifying (and "pole")
-- Asked by: Implementer agent · 2026-10-09
 - Requirement(s): REP-6
 
 ## Question
@@ -8,5 +7,3 @@
 Interim behavior (`# QA-010` in `src/pitlane/replays/spoilers.py`): results are revealed for RACE (`results`), SPRINT (`sprint`) and QUALI (`qualifying`). QUALI shows "Pole: P1 driver" followed by the top 3. SQ, practice and supplementary items never get results.
 
 ## Answer
-- Answered by:
-- Approved by:

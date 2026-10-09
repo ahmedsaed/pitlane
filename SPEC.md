@@ -8,8 +8,7 @@ Pitlane is a single long-running service that connects operator-configured motor
 
 ### 1.1 Out of scope
 
-- Shipping, bundling, or recommending any content source. Providers are generic; the operator supplies the inputs (see `docs/clean-room.md` §5).
-- Bypassing DRM, authentication, geo-restriction, or access controls of any source.
+- Shipping, bundling, or recommending any content source. Providers are generic; the operator supplies the inputs (see `docs/providers.md`).
 - Playing web-page embeds (iframes). Plex needs a direct media stream. A source that only exists as a web player is unsupported.
 - A Plex client plugin. Plex removed channel plugins; Pitlane integrates only through documented PMS surfaces (tuner emulation, XMLTV, library folders, PMS HTTP API).
 - Series other than Formula 1 in v1. The data model MUST NOT preclude adding them (F2, F3, MotoGP…) later.

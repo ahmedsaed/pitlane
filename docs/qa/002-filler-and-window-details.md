@@ -1,5 +1,4 @@
 # 002 – Filler sub-title format, "local time" zone, and guide window boundaries
-- Asked by: Implementer agent · 2026-10-09
 - Requirement(s): EPG-2, EPG-5
 
 ## Question
@@ -15,5 +14,3 @@ Interim behavior (`# QA-002` in `src/pitlane/xmltv.py` and `src/pitlane/config.p
 4. The window starts at 00:00 UTC `days_back` days before today and ends at 24:00 UTC on the `days_ahead`-th day after today. Session programmes that overlap a boundary are included unclipped. Filler is clipped to the window.
 
 ## Answer
-- Answered by:
-- Approved by:

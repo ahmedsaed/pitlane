@@ -1,5 +1,4 @@
 # 001 – Is a programme's stop time computed from the official start or the padded start?
-- Asked by: Implementer agent · 2026-10-09
 - Requirement(s): EPG-4, acceptance criterion 4
 
 ## Question
@@ -8,5 +7,3 @@
 Interim behavior (`# QA-001` in `src/pitlane/xmltv.py`): `stop = official start + nominal + post_roll`. This gives the longer window, so a DVR recording never cuts off the end of a session. With the defaults, a 12:00 UTC race runs 11:50–14:20 UTC.
 
 ## Answer
-- Answered by:
-- Approved by:
