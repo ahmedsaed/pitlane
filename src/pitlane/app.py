@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Res
 from .calendar.jolpica import BASE_URL as JOLPICA_URL
 from .calendar.jolpica import Calendar, JolpicaClient
 from .channels import ChannelMap, Source
+from .connections import ConnectionLimiter
 from .config import Config, ConfigError, config_warnings, is_loopback_host, load_config, split_bind
 from .health import HealthChecker, near_session
 from .http import FetchClient
@@ -79,6 +80,7 @@ class App:
         self.channel_map: ChannelMap = None  # type: ignore[assignment]
         self.health: HealthChecker = None  # type: ignore[assignment]
         self.pool = TunerPool(cfg.tuners.count)
+        self.connections = ConnectionLimiter(cfg.connection_limits())
         self.replays: Any = None
         self.jolpica: JolpicaClient = None  # type: ignore[assignment]
         self.reload_error: list[str] | None = None
@@ -104,6 +106,7 @@ class App:
             self.cfg.health.interval,
             self.cfg.health.interval_near_session,
             is_near_session=self._near_session,
+            limiter=self.connections,
         )
         if self.cfg.replays_enabled:
             from .replays.pipeline import ReplayPipeline
@@ -229,6 +232,7 @@ class App:
             old_registry = self.registry
             self.cfg = new
             self.pool.count = new.tuners.count
+            self.connections.configure(new.connection_limits())
             self.health.interval = new.health.interval
             self.health.interval_near = new.health.interval_near_session
             await self._load_calendars(use_network=False)
@@ -265,7 +269,8 @@ class App:
             mark_source=mark,
             reprobe=lambda src: self.health.reprobe_soon(src),
             http_client=self.http.raw,
-            probe=lambda src: self.health.probe_source(src),
+            probe=lambda src: self.health.probe_source(src, preemptible=False),
+            limiter=self.connections,
         )
 
     def xmltv(self, base_url: str) -> tuple[bytes, str]:

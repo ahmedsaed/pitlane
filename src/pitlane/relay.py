@@ -19,6 +19,7 @@ from typing import Any, AsyncIterator, Awaitable, Callable
 import httpx
 
 from .channels import LogicalChannel, Source
+from .connections import ConnectionLimiter, Lease
 from .logging import correlation, get_logger, new_correlation_id
 from .metrics import Metrics
 from .providers.base import OpenedInput, ProviderError, check_opened
@@ -189,6 +190,13 @@ class FfmpegInput:
         try:
             if self.proc is not None:
                 if self.proc.returncode is None:
+                    # Nobody reads stdout any more; closing it unblocks an ffmpeg stuck
+                    # writing to a full pipe, so SIGTERM ends it at once instead of after
+                    # KILL_GRACE (frees a LIVE-10 connection slot ~3 s sooner).
+                    transport = getattr(self.proc, "_transport", None)
+                    stdout = transport.get_pipe_transport(1) if transport is not None else None
+                    if stdout is not None:
+                        stdout.close()
                     self._signal_group(signal.SIGTERM)
                     try:
                         await asyncio.wait_for(asyncio.shield(self.proc.wait()), KILL_GRACE)
@@ -297,6 +305,8 @@ class RelayHooks:
     # LIVE-6: synchronous probe used to re-check offline sources at tune time;
     # it records the result in the source's health state.
     probe: Callable[[Source], Awaitable[Any]] | None = None
+    # LIVE-10: per-provider connection limits (None = unlimited)
+    limiter: ConnectionLimiter | None = None
 
 
 class TuneFailed(Exception):
@@ -322,6 +332,8 @@ class StreamSession:
     _input: Any = None
     _idx: int = -1
     _closing: set = field(default_factory=set)
+    _lease: Lease | None = None
+    _deferred: set = field(default_factory=set)  # source ids put back because their provider was busy
     offline_sources: list[Source] = field(default_factory=list)  # LIVE-6 last resort
 
     async def _open_input(self, src: Source) -> Any:
@@ -343,15 +355,51 @@ class StreamSession:
 
     async def _close_input(self, background: bool = False) -> None:
         """Close the current input. With ``background`` the old process is retired in a
-        tracked task, so failover does not wait for its SIGTERM grace period."""
-        if self._input is not None:
-            inp, self._input = self._input, None
-            if background:
-                t = asyncio.get_running_loop().create_task(inp.aclose())
-                self._closing.add(t)
-                t.add_done_callback(self._closing.discard)
-            else:
-                await inp.aclose()
+        tracked task, so failover does not wait for its SIGTERM grace period. The
+        connection lease is released only once the input is closed (LIVE-10)."""
+        inp, self._input = self._input, None
+        lease, self._lease = self._lease, None
+        if inp is None:
+            if lease is not None:
+                lease.release()
+            return
+        if background:
+            if lease is not None:
+                lease.closing()
+            t = asyncio.get_running_loop().create_task(self._retire(inp, lease))
+            self._closing.add(t)
+            t.add_done_callback(self._closing.discard)
+        else:
+            await self._retire(inp, lease)
+
+    @staticmethod
+    async def _retire(inp: Any, lease: Lease | None) -> None:
+        try:
+            await inp.aclose()
+        finally:
+            if lease is not None:
+                lease.release()
+
+    async def _acquire(self, src: Source, deadline: float | None) -> Lease | None | bool:
+        """LIVE-10: a connection slot for ``src``. Returns ``False`` when the source was
+        put back at the end of the list because its provider is busy streaming."""
+        limiter = self.hooks.limiter
+        if limiter is None or limiter.limit(src.provider) is None:
+            return None
+        wait = self.stall_timeout if deadline is None else max(0.0, deadline - time.monotonic())
+        retry = src.id in self._deferred
+        lease = await limiter.acquire_stream(src.provider, wait, wait_for_streams=retry)
+        if lease is not None:
+            return lease
+        if not retry:
+            # Try the other sources first; come back and wait for a slot after them.
+            self._deferred.add(src.id)
+            self.sources.append(src)
+            log.info("provider connections in use; trying other sources first",
+                     extra={"channel": self.channel.id, "source": src.id, "provider": src.provider})  # fmt: skip
+        else:
+            log.warning("no free provider connection", extra={"channel": self.channel.id, "source": src.id, "provider": src.provider})
+        return False
 
     async def _fail(self, src: Source, state: str, reason: str) -> None:
         await self._close_input(background=True)
@@ -365,6 +413,10 @@ class StreamSession:
             if self._idx >= len(self.sources):
                 raise TuneFailed("all sources exhausted")
             src = self.sources[self._idx]
+            lease = await self._acquire(src, deadline)
+            if lease is False:
+                continue
+            self._lease = lease
             prev = self.current
             self.current = src
             if prev is not None:
@@ -378,6 +430,7 @@ class StreamSession:
             if deadline is not None:
                 limit = min(limit, deadline - time.monotonic())
                 if limit <= 0:
+                    await self._close_input()
                     raise TuneFailed("tune timeout")
             try:
                 self._input = await asyncio.wait_for(self._open_input(src), limit)
@@ -419,9 +472,10 @@ class StreamSession:
                 result = await asyncio.wait_for(self.hooks.probe(src), remaining)
             except TimeoutError:
                 break
-            if getattr(result, "state", "offline") not in ("online", "degraded"):
+            # None: not probed (health checks off, or connection limit); opening it is the probe.
+            if result is not None and getattr(result, "state", "offline") not in ("online", "degraded"):
                 continue
-            log.info("offline source passed re-probe", extra={"channel": self.channel.id, "source": src.id})
+            log.info("retrying offline source", extra={"channel": self.channel.id, "source": src.id, "probed": result is not None})
             self.sources.append(src)
             self._idx = len(self.sources) - 2
             try:

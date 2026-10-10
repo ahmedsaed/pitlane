@@ -46,6 +46,8 @@ Pitlane is a single long-running service that connects operator-configured motor
 - **LIVE-7** Pitlane SHOULD fail over mid-stream (Plex continuing playback across a switch without re-tuning is **[verified 2026-10-09, real PMS]**). If no bytes arrive from the input for `stall_timeout` (default 8 s), switch to the next healthy source without closing the client's HTTP response, and log the switch.
 - **LIVE-8** Pitlane MAY offer an optional transcode profile per channel (e.g. a 720p H.264 fallback) for weak clients. It is off by default.
 - **LIVE-9** All active streams MUST stop within 5 s of the client disconnecting. No orphaned `ffmpeg` processes.
+- **LIVE-10** A provider MAY set `max_connections`. Pitlane MUST then never hold more upstream connections to that provider (stream inputs and health probes together) than the limit: streams take precedence over probes, a provider whose connections are all streaming is not probed, and on failover the old connection is closed before the next one to the same provider opens. A tune that finds the provider busy tries the channel's other sources first, then waits for a connection to free up within `tune_timeout`. Many IPTV accounts allow one connection, and a second one kicks the first off **[verified 2026-10-10, Xtream Codes panel]**.
+- **LIVE-11** A provider MAY set `health_checks: false`. Pitlane MUST then send no probe to its sources (scheduled, after a failure, or at tune time). Its sources stay in their last state, and at tune time they are tried directly in priority order, so opening the stream is the check. This keeps request volume to a provider at one connection per tune.
 
 ### 2.3 Guide (EPG)
 

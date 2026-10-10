@@ -36,6 +36,7 @@ class FlakyProxy:
         self.host = host
         self.port = port
         self.mode = "pass"
+        self.requests = 0  # proxied (non-control) requests, for tests
         self.server: asyncio.base_events.Server | None = None
         self._conns: set[asyncio.StreamWriter] = set()
         self._mode_changed = asyncio.Event()
@@ -76,6 +77,7 @@ class FlakyProxy:
             if target.startswith("/_control/"):
                 await self._control(target, writer)
                 return
+            self.requests += 1
             if self.mode == "drop":
                 writer.transport.abort()
                 return

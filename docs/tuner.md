@@ -104,6 +104,27 @@ all sources exhausted → end response
 - A slot is held from request start until the response ends.
 - PMS often opens a second request when changing channels before closing the first. Pitlane MUST free a slot as soon as the TCP connection closes, not when the next chunk write fails.
 
+## Connection limits (LIVE-10)
+
+A provider with `max_connections: N` holds a lease for every upstream connection Pitlane opens to it: one per stream input, one per health probe.
+
+- **Streams before probes.** A tune that needs a slot cancels running health probes on that provider. A probe started at tune time (LIVE-6 last resort) is not cancelled; the tune waits for it.
+- **No probes while streaming.** When every slot of the provider is streaming, or a tune is waiting for one, health probes of its sources are skipped and their last state is kept. The live stream is the health signal; the relay marks failures as they happen. Probes of the same provider run one at a time.
+- **No overlap on failover.** A failed input keeps its slot until its ffmpeg has exited (SIGTERM, SIGKILL after 3 s). The next source of the same provider waits for it.
+- **Busy provider at tune time.** A source whose provider has every slot streaming is put back at the end of the channel's source list, so sources of other providers are tried first. On the second pass the tune waits for a slot within `tune_timeout` (`stall_timeout` mid-stream). This covers PMS opening the new channel before closing the old one. If nothing frees up, the tune fails with 503.
+
+Set `tuners.count` above the provider limit when the account is the only source: with `count: 1`, PMS's overlapping channel-change request would be rejected at the tuner slot before it could wait for the connection.
+
+## Health checks off (LIVE-11)
+
+Each probe of a `ts`/`hls` source is a real upstream connection. For an IPTV account that is one connection per source every 5 min (every minute near a session), which is the kind of traffic a panel may flag. With `health_checks: false` on the provider:
+
+- no scheduled probes, no reprobe after a mid-stream failure, no probe before a tune;
+- sources start as not yet probed and are tried in priority order (LIVE-6). A source that failed during a stream is marked `offline` by the relay and is tried last, directly, without a probe;
+- failover (LIVE-7) works as before, because it is driven by the stream itself.
+
+The UI therefore shows only what streams have observed for these sources.
+
 ## Metrics
 
 `pitlane_streams_active`, `pitlane_stream_failovers_total{channel}`, `pitlane_tune_seconds` (histogram), `pitlane_source_state{source,channel}` (gauge: 0 offline, 1 degraded, 2 online), `pitlane_tuner_rejections_total`.

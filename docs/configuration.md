@@ -47,6 +47,8 @@ providers:
     name: my-iptv
     url: ${file:/config/iptv_url}
     refresh: 6h
+    max_connections: 1                # any provider; see docs/tuner.md "Connection limits"
+    health_checks: false              # any provider; no probes, tune tries sources directly
     map:
       - match: { tvg-id: "f1\\.main" }
         channel: f1-main

@@ -66,6 +66,8 @@ class ReplayItemSpec:
 
 ## Built-in providers
 
+Every provider also accepts `max_connections: N`, the number of simultaneous upstream connections the account allows (LIVE-10, `docs/tuner.md` "Connection limits"). Leave it unset for sources without a limit. `health_checks: false` stops all probing of the provider's sources (LIVE-11); use it for accounts where every probe is a connection you would rather not make.
+
 ### `m3u` (live)
 
 Reads an extended M3U playlist from a file path or URL.

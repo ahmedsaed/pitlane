@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Callable
 
 from .channels import ChannelMap, Source
+from .connections import ConnectionLimiter
 from .logging import get_logger
 from .metrics import STATE_VALUE, Metrics
 from .providers.base import ProbeResult
@@ -26,6 +27,13 @@ def near_session(now: datetime, sessions: list[Any], window_for: Callable[[Any],
     return False
 
 
+def health_checks_enabled(provider: Any) -> bool:
+    """LIVE-11: ``health_checks: false`` on a provider turns off every probe of its sources."""
+    cfg = getattr(provider, "cfg", None)
+    value = cfg.get("health_checks", True) if isinstance(cfg, dict) else getattr(cfg, "health_checks", True)
+    return value is not False
+
+
 class HealthChecker:
     def __init__(
         self,
@@ -36,6 +44,7 @@ class HealthChecker:
         interval_near: timedelta,
         is_near_session: Callable[[datetime], bool] = lambda now: False,
         concurrency: int = 8,
+        limiter: ConnectionLimiter | None = None,
     ) -> None:
         self.map = channel_map
         self.registry = registry
@@ -43,6 +52,7 @@ class HealthChecker:
         self.interval = interval
         self.interval_near = interval_near
         self.is_near_session = is_near_session
+        self.limiter = limiter or ConnectionLimiter()
         self._sem = asyncio.Semaphore(concurrency)
         self._wake = asyncio.Event()
         self._task: asyncio.Task | None = None
@@ -52,16 +62,34 @@ class HealthChecker:
         now = now or datetime.now(UTC)
         return self.interval_near if self.is_near_session(now) else self.interval
 
-    async def probe_source(self, src: Source) -> ProbeResult:
+    async def probe_source(self, src: Source, *, preemptible: bool = True) -> ProbeResult | None:
+        """Probe and record. Returns ``None`` without recording when the provider's
+        connection limit leaves no slot (LIVE-10), a stream preempted the probe, or the
+        provider has health checks turned off (LIVE-11)."""
         provider = self.registry.get(src.provider)
         async with self._sem:
             if provider is None:
                 result = ProbeResult("offline", None, "provider not running")
+            elif not health_checks_enabled(provider):
+                return None
             else:
-                try:
-                    result = await provider.probe(src.locator)
-                except Exception as e:
-                    result = ProbeResult("offline", None, str(e) or e.__class__.__name__)
+                async with self.limiter.probe_slot(src.provider, preemptible=preemptible) as lease:
+                    if lease is None:
+                        log.debug("probe skipped: provider connections in use", extra={"source": src.id})
+                        return None
+                    inner = asyncio.get_running_loop().create_task(provider.probe(src.locator))
+                    lease.task = inner
+                    try:
+                        result = await inner
+                    except asyncio.CancelledError:
+                        current = asyncio.current_task()
+                        if inner.cancelled() and not (current and current.cancelling()):
+                            log.debug("probe preempted by a stream", extra={"source": src.id})
+                            return None
+                        inner.cancel()
+                        raise
+                    except Exception as e:
+                        result = ProbeResult("offline", None, str(e) or e.__class__.__name__)
         self.record(src, result)
         return result
 

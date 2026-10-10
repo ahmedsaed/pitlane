@@ -42,6 +42,8 @@ providers:
     name: my-iptv
     url: ${file:/config/iptv_url}
     refresh: 6h
+    max_connections: 1               # LIVE-10: the account allows one connection
+    health_checks: false             # LIVE-11: no probe traffic to the panel
     map:
       - match: { tvg-id: "f1\\.main" }
         channel: f1-main

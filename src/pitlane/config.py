@@ -161,6 +161,8 @@ class ProviderBase(Strict):
     type: str
     name: str
     http: HttpCfg = Field(default_factory=HttpCfg)
+    max_connections: int | None = Field(None, ge=1)  # LIVE-10
+    health_checks: bool = True  # LIVE-11
 
 
 class M3uProviderCfg(ProviderBase):
@@ -226,6 +228,8 @@ class PluginProviderCfg(BaseModel):
     type: str
     name: str
     http: HttpCfg = Field(default_factory=HttpCfg)
+    max_connections: int | None = Field(None, ge=1)  # LIVE-10
+    health_checks: bool = True  # LIVE-11
 
 
 PROVIDER_MODELS: dict[str, type[BaseModel]] = {
@@ -400,6 +404,10 @@ class Config(Strict):
             if c.id == channel_id:
                 return c
         return None
+
+    def connection_limits(self) -> dict[str, int]:
+        """LIVE-10: ``max_connections`` per provider name, for providers that set it."""
+        return {p.name: p.max_connections for p in self.provider_cfgs if getattr(p, "max_connections", None)}
 
     @property
     def replays_enabled(self) -> bool:

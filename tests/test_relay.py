@@ -15,6 +15,7 @@ import socket
 import subprocess
 import sys
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
@@ -117,8 +118,8 @@ def our_ffmpeg_pids(exclude: set[int]) -> set[int]:
     return {p.pid for p in me.children(recursive=True) if p.pid not in exclude and "ffmpeg" in (p.name() or "")}
 
 
-@pytest.fixture
-async def harness(hls_stream, tmp_path):
+@asynccontextmanager
+async def make_harness(hls_stream, tmp_path, **provider_extra):
     proxies = [FlakyProxy(hls_stream), FlakyProxy(hls_stream)]
     for p in proxies:
         await p.start()
@@ -140,7 +141,7 @@ async def harness(hls_stream, tmp_path):
                 {"id": "f1-main", "guide_number": 101, "name": "F1 Main Feed", "series": ["f1"]},
                 {"id": "f1-dead", "guide_number": 102, "name": "Dead Channel"},
             ],
-            "providers": [{"type": "channel-json", "name": "mine", "path": str(tmp_path / "channels.json")}],
+            "providers": [{"type": "channel-json", "name": "mine", "path": str(tmp_path / "channels.json"), **provider_extra}],
         },
         environ={},
     )
@@ -158,6 +159,19 @@ async def harness(hls_stream, tmp_path):
     await task
     for p in proxies:
         await p.stop()
+
+
+@pytest.fixture
+async def harness(hls_stream, tmp_path):
+    async with make_harness(hls_stream, tmp_path) as h:
+        yield h
+
+
+@pytest.fixture
+async def limited_harness(hls_stream, tmp_path):
+    """LIVE-10: sources A and B share one provider that allows a single connection."""
+    async with make_harness(hls_stream, tmp_path, max_connections=1) as h:
+        yield h
 
 
 async def read_bytes(resp: httpx.Response, n: int, timeout: float) -> bytes:
@@ -364,3 +378,117 @@ async def test_offline_sources_still_down_gives_503(harness):
         r = await c.get("/auto/v101")
         assert r.status_code == 503 and time.monotonic() - t0 < 8 + 2
     assert not app.pool.in_use and not app.tracker.live
+
+
+# ------------------------------------------------------------------ LIVE-10 connection limits
+
+
+async def sample_peak(app: App, stop: asyncio.Event) -> int:
+    """Highest number of upstream connections held to provider "mine" while sampling."""
+    peak = 0
+    while not stop.is_set():
+        peak = max(peak, app.connections.in_use("mine"), len(app.tracker.live))
+        await asyncio.sleep(0.005)
+    return peak
+
+
+@needs_ffmpeg
+async def test_limited_failover_never_overlaps_connections(limited_harness):
+    h = limited_harness
+    app = h.app
+    stop = asyncio.Event()
+    sampler = asyncio.create_task(sample_peak(app, stop))
+    async with httpx.AsyncClient(base_url=h.base, timeout=None) as c:
+        async with c.stream("GET", "/auto/v101") as resp:
+            assert resp.status_code == 200
+            await read_bytes(resp, 50_000, 10)
+            h.proxies[0].set_mode("stall")
+            failovers = app.metrics.failovers.labels(channel="f1-main")
+            assert await wait_until(lambda: failovers._value.get() >= 1, 10)
+            # B starts only after A's connection is closed, still within stall_timeout + 3 s + SIGTERM grace.
+            assert_ts(await read_bytes(resp, 100_000, 3 + 3 + 3))
+    stop.set()
+    assert await sampler == 1
+    assert await wait_until(lambda: app.connections.in_use("mine") == 0 and not app.tracker.live, 5)
+
+
+@needs_ffmpeg
+async def test_limited_provider_not_probed_while_streaming(limited_harness):
+    app = limited_harness.app
+    await app.health.probe_all()
+    sources = app.channel_map.channel_sources("f1-main")
+    async with httpx.AsyncClient(base_url=limited_harness.base, timeout=None) as c:
+        async with c.stream("GET", "/auto/v101") as resp:
+            await read_bytes(resp, 20_000, 10)
+            before = {s.id: s.last_probe_at for s in sources}
+            for p in limited_harness.proxies:
+                p.requests = 0
+            await app.health.probe_all()
+            assert {s.id: s.last_probe_at for s in sources} == before  # skipped, state kept
+            assert limited_harness.proxies[1].requests == 0  # B never touched
+            assert app.connections.in_use("mine") == 1
+
+
+@needs_ffmpeg
+async def test_limited_second_tune_waits_for_channel_change(limited_harness):
+    """PMS opens the new channel before closing the old one; the new tune waits for the slot."""
+    app = limited_harness.app
+    async with httpx.AsyncClient(base_url=limited_harness.base, timeout=None) as c:
+
+        async def tune_second() -> float:
+            async with c.stream("GET", "/auto/v101") as r2:
+                assert r2.status_code == 200
+                assert_ts(await read_bytes(r2, 188 * 20, 10))
+                return time.monotonic()
+
+        async with c.stream("GET", "/auto/v101") as r1:
+            await read_bytes(r1, 20_000, 10)
+            second = asyncio.create_task(tune_second())
+            await asyncio.sleep(1.0)
+            assert not second.done()  # waiting: no 503, no second upstream connection
+            assert app.connections.in_use("mine") == 1
+        t_close = time.monotonic()
+        started = await asyncio.wait_for(second, 10)
+        assert started - t_close < 5
+    assert await wait_until(lambda: app.connections.in_use("mine") == 0 and not app.pool.in_use, 5)
+
+
+@needs_ffmpeg
+async def test_limited_busy_provider_gives_503_after_tune_timeout(limited_harness):
+    app = limited_harness.app
+    async with httpx.AsyncClient(base_url=limited_harness.base, timeout=None) as c:
+        async with c.stream("GET", "/auto/v101") as r1:
+            await read_bytes(r1, 20_000, 10)
+            t0 = time.monotonic()
+            r2 = await asyncio.wait_for(c.get("/auto/v101"), 8 + 2)
+            assert r2.status_code == 503 and 7 < time.monotonic() - t0 < 8 + 2
+            assert app.connections.in_use("mine") == 1
+            assert_ts(await read_bytes(r1, 20_000, 10))  # first viewer undisturbed
+    assert await wait_until(lambda: app.connections.in_use("mine") == 0 and not app.pool.in_use, 5)
+
+
+# ------------------------------------------------------------------ LIVE-11 health checks off
+
+
+@pytest.fixture
+async def unprobed_harness(hls_stream, tmp_path):
+    async with make_harness(hls_stream, tmp_path, max_connections=1, health_checks=False) as h:
+        yield h
+
+
+@needs_ffmpeg
+async def test_health_checks_off_sends_no_probes_and_still_tunes(unprobed_harness):
+    h = unprobed_harness
+    app = h.app
+    await app.health.probe_all()
+    assert sum(p.requests for p in h.proxies) == 0  # nothing sent upstream
+    main = app.channel_map.channel_sources("f1-main")
+    assert {s.state for s in main} == {"unknown"} and all(s.last_probe_at is None for s in main)
+    for s in main:  # e.g. both failed during an earlier stream
+        app.health.mark(s, "offline", "earlier failure")
+    async with httpx.AsyncClient(base_url=h.base, timeout=None) as c:
+        async with c.stream("GET", "/auto/v101") as resp:  # tried directly, no probe first
+            assert resp.status_code == 200
+            assert_ts(await read_bytes(resp, 188 * 20, 10))
+    assert h.proxies[1].requests == 0  # A worked; B never contacted
+    assert await wait_until(lambda: not app.pool.in_use and not app.tracker.live, 5)
