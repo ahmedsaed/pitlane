@@ -97,6 +97,7 @@ all sources exhausted → end response
 - Timestamps restart on every switch. `-mpegts_flags +resend_headers`, together with a fresh PAT/PMT at the start of each segment, is what lets clients resync. Clients that can't resync may stop playback. This is acceptable in v1, and the switch is still logged.
 - The relay keeps no buffer beyond ffmpeg's pipe and one chunk, so that latency stays within NFR-2.
 - A source that failed during a stream is reprobed immediately, outside the normal schedule.
+- When ffmpeg rejects an HTTP source with "Invalid data found when processing input", the server answered with something that is not media. The relay makes one GET of the source (first 4 KiB, within the tune deadline, holding the source's connection slot) and records what it was as the source's error, e.g. `not a media stream: HTTP 200 text/html from megaplusredirection.tedata.net (redirected), page title "Redirection Page"; an ISP quota/captive-portal page or a provider error page`. Only hosts are reported, never URL paths, which may carry credentials. Probes describe web pages and redirects the same way.
 
 ## Tuner slots
 

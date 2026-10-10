@@ -492,3 +492,22 @@ async def test_health_checks_off_sends_no_probes_and_still_tunes(unprobed_harnes
             assert_ts(await read_bytes(resp, 188 * 20, 10))
     assert h.proxies[1].requests == 0  # A worked; B never contacted
     assert await wait_until(lambda: not app.pool.in_use and not app.tracker.live, 5)
+
+
+@needs_ffmpeg
+async def test_captive_portal_is_reported_clearly(harness):
+    """An ISP quota page (redirect to HTML) is named in the source error, not just
+    ffmpeg's "Invalid data found when processing input"."""
+    app = harness.app
+    harness.proxies[0].set_mode("portal")
+    harness.proxies[1].set_mode("error")
+    async with httpx.AsyncClient(base_url=harness.base, timeout=None) as c:
+        r = await c.get("/auto/v101")
+        assert r.status_code == 503
+    a = next(s for s in app.channel_map.channel_sources("f1-main") if s.label == "A")
+    assert a.state == "offline"
+    assert "not a media stream: HTTP 200 text/html from localhost (redirected)" in a.last_error
+    assert 'page title "Quota Notice"' in a.last_error and "captive-portal" in a.last_error
+    # ffmpeg's attempt + one diagnostic GET + the reprobe after a failure (health checks on here)
+    assert harness.proxies[0].requests == 3
+    assert await wait_until(lambda: not app.pool.in_use and not app.tracker.live, 5)

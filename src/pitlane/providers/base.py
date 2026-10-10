@@ -17,7 +17,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Literal, Protocol, runtime_checkable
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 
@@ -173,11 +173,11 @@ async def probe_hls(http: httpx.AsyncClient, url: str, headers: dict[str, str], 
     §4.3.4.2) and then one media segment; each must answer HTTP 200."""
     info: dict[str, Any] = {}
     resp = await http.get(url, headers=headers, timeout=timeout)
-    if resp.status_code != 200:
-        raise ProviderError(f"playlist HTTP {resp.status_code}")
     text = resp.text
-    if not text.lstrip("﻿").startswith("#EXTM3U"):
-        raise ProviderError("not an HLS playlist")
+    if resp.status_code != 200 or not text.lstrip("﻿").startswith("#EXTM3U"):
+        if resp.status_code == 200 and not looks_like_page(resp, resp.content[:4096]):
+            raise ProviderError("not an HLS playlist")
+        raise ProviderError(describe_non_media(url, resp, resp.content[:4096]))
     base = str(resp.url)
     if "#EXT-X-STREAM-INF" in text:
         variant = _first_uri(text)
@@ -210,16 +210,66 @@ def check_ts_sync(data: bytes, packets: int = 100) -> bool:
     return False
 
 
+_TITLE_RE = re.compile(rb"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
+
+
+def describe_non_media(url: str, resp: httpx.Response, head: bytes) -> str:
+    """Say what a source returned instead of media: status, type, where a redirect
+    ended up, and the page title. Hosts only; the URL path may carry credentials."""
+    ctype = resp.headers.get("content-type", "").split(";")[0].strip() or "no content type"
+    msg = f"not a media stream: HTTP {resp.status_code} {ctype}"
+    final_host = resp.url.host
+    if resp.history and final_host and final_host != urlsplit(url).hostname:
+        msg += f" from {final_host} (redirected)"
+    m = _TITLE_RE.search(head)
+    if m:
+        title = re.sub(r"\s+", " ", m.group(1).decode("utf-8", "replace")).strip()[:80]
+        if title:
+            msg += f', page title "{title}"'
+    if ctype in ("text/html", "application/xhtml+xml"):
+        msg += "; an ISP quota/captive-portal page or a provider error page"
+    return msg
+
+
+def looks_like_page(resp: httpx.Response, head: bytes) -> bool:
+    """A web page (or a redirect away from the source) rather than a broken stream."""
+    return bool(resp.history) or "html" in resp.headers.get("content-type", "") or head.lstrip()[:1] == b"<"
+
+
+def looks_like_media(head: bytes) -> bool:
+    return head.lstrip().startswith(b"#EXTM3U") or check_ts_sync(head, packets=min(20, len(head) // 188 or 1))
+
+
+async def diagnose_http_source(http: httpx.AsyncClient, url: str, headers: dict[str, str], timeout: float) -> str | None:
+    """One GET of ``url`` (first 4 KiB only) to explain why ffmpeg found no media.
+    Returns ``None`` when the answer now looks like media or the request failed."""
+    head = b""
+    try:
+        async with http.stream("GET", url, headers=headers, timeout=timeout) as resp:
+            async for chunk in resp.aiter_bytes():
+                head += chunk
+                if len(head) >= 4096:
+                    break
+    except httpx.HTTPError:
+        return None
+    if resp.status_code == 200 and looks_like_media(head):
+        return None
+    return describe_non_media(url, resp, head)
+
+
 async def probe_ts(http: httpx.AsyncClient, url: str, headers: dict[str, str], timeout: float) -> dict:
     need = 188 * 100
     buf = bytearray()
     async with http.stream("GET", url, headers=headers, timeout=timeout) as resp:
         if resp.status_code != 200:
-            raise ProviderError(f"HTTP {resp.status_code}")
+            raise ProviderError(describe_non_media(url, resp, b""))
         async for chunk in resp.aiter_bytes():
             buf += chunk
             if len(buf) >= need + 188:
                 break
+    head = bytes(buf[:4096])
+    if not looks_like_media(head) and looks_like_page(resp, head):
+        raise ProviderError(describe_non_media(url, resp, head))
     if len(buf) < need:
         raise ProviderError(f"short read ({len(buf)} bytes)")
     if not check_ts_sync(bytes(buf[: need + 187])):

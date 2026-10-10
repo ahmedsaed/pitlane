@@ -22,7 +22,7 @@ from .channels import LogicalChannel, Source
 from .connections import ConnectionLimiter, Lease
 from .logging import correlation, get_logger, new_correlation_id
 from .metrics import Metrics
-from .providers.base import OpenedInput, ProviderError, check_opened
+from .providers.base import OpenedInput, ProviderError, check_opened, diagnose_http_source
 from .state import State, now_iso
 
 log = get_logger("relay")
@@ -333,6 +333,7 @@ class StreamSession:
     _idx: int = -1
     _closing: set = field(default_factory=set)
     _lease: Lease | None = None
+    _opened: OpenedInput | None = None
     _deferred: set = field(default_factory=set)  # source ids put back because their provider was busy
     offline_sources: list[Source] = field(default_factory=list)  # LIVE-6 last resort
 
@@ -341,6 +342,7 @@ class StreamSession:
         if provider is None:
             raise InputError("provider not running")
         opened = check_opened(await provider.open(src.locator))
+        self._opened = opened
         if src.kind == "tuner" and not self.channel.transcode:
             if self.hooks.http_client is None:
                 raise InputError("no HTTP client for tuner passthrough")
@@ -443,10 +445,28 @@ class StreamSession:
                 continue
             if not data:
                 code = await self._input.wait_exit()
-                await self._fail(src, "offline", self._input.error_text() if code else "ended without data")
+                error = self._input.error_text() if code else "ended without data"
+                if code and "Invalid data found" in error:
+                    error = await self._diagnose(src, deadline) or error
+                await self._fail(src, "offline", error)
                 continue
             log.info("source started", extra={"channel": self.channel.id, "source": src.id, "label": src.label})
             return data
+
+    async def _diagnose(self, src: Source, deadline: float | None) -> str | None:
+        """ffmpeg got an answer that is not media (a captive portal, an error page).
+        One short GET says what it was. Runs while the source still holds its
+        connection slot (LIVE-10), and only for this failure."""
+        opened = self._opened
+        if self.hooks.http_client is None or opened is None or not opened.url_or_path.lower().startswith(("http://", "https://")):
+            return None
+        timeout = 5.0 if deadline is None else min(5.0, deadline - time.monotonic())
+        if timeout <= 0.5:
+            return None
+        found = await diagnose_http_source(self.hooks.http_client, opened.url_or_path, opened.headers, timeout)
+        if found:
+            log.warning("source returned non-media", extra={"channel": self.channel.id, "source": src.id, "error": found})
+        return found
 
     async def tune(self) -> bytes:
         """Start the first working source and return its first chunk (≤ tune_timeout)."""

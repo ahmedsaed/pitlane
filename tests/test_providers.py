@@ -415,3 +415,24 @@ def test_adaptive_interval():
     )  # fmt: skip
     assert hc.current_interval(datetime(2026, 1, 1, 12, tzinfo=UTC)) == timedelta(minutes=1)
     assert hc.current_interval(datetime(2026, 1, 1, 9, tzinfo=UTC)) == timedelta(minutes=5)
+
+
+def test_describe_non_media():
+    import httpx
+
+    from pitlane.providers.base import describe_non_media, looks_like_media
+
+    req = httpx.Request("GET", "http://portal.example.invalid/notice.html")
+    first = httpx.Response(307, request=httpx.Request("GET", "http://panel.example.invalid/live/u/p/1.ts"))
+    resp = httpx.Response(200, headers={"content-type": "text/html; charset=utf-8"}, request=req, history=[first])
+    msg = describe_non_media("http://panel.example.invalid/live/u/p/1.ts", resp, b"<html><title>\n Quota  Notice </title>")
+    assert msg == (
+        'not a media stream: HTTP 200 text/html from portal.example.invalid (redirected), page title "Quota Notice"; '
+        "an ISP quota/captive-portal page or a provider error page"
+    )
+    assert "/u/p/" not in msg  # never echo the path (credentials)
+    denied = httpx.Response(401, request=httpx.Request("GET", "http://panel.example.invalid/x.ts"))
+    assert describe_non_media("http://panel.example.invalid/x.ts", denied, b"") == "not a media stream: HTTP 401 no content type"
+    assert looks_like_media(b"#EXTM3U\n#EXT-X-VERSION:3\n")
+    assert looks_like_media(bytes([0x47] + [0] * 187) * 30)
+    assert not looks_like_media(b"<!DOCTYPE html><html></html>")
