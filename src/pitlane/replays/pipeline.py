@@ -14,6 +14,8 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import httpx
+
 from ..logging import correlation, get_logger, new_correlation_id
 from ..models import SessionType
 from ..state import now_iso
@@ -415,8 +417,14 @@ class ReplayPipeline:
                 continue
             try:
                 watched = await self.plex.view_count(row["plex_rating_key"], token=token) > 0
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    await self._relink_missing(row)
+                else:
+                    log.warning("viewCount read failed", extra={"error": str(e)})
+                continue
             except Exception as e:
-                log.warning("viewCount read failed", extra={"error": str(e)})
+                log.warning("viewCount read failed", extra={"error": f"{type(e).__name__}: {e}"})
                 continue
             if not watched:
                 continue
@@ -431,6 +439,29 @@ class ReplayPipeline:
             self.app.state.execute("UPDATE library_items SET spoiler_state='revealed' WHERE path=?", (row["path"],))
             revealed += 1
         return revealed
+
+    async def _relink_missing(self, row: Any) -> None:
+        """The Plex item behind a library row is gone (404). If the file is gone too, the
+        row is dropped; if Plex re-added the file under a new key, the row follows it;
+        otherwise the key is cleared so the item is not polled again."""
+        path = Path(row["path"])
+        if not await asyncio.to_thread(path.exists):
+            self.app.state.execute("DELETE FROM library_items WHERE path=?", (row["path"],))
+            log.info("library file removed; no longer tracked", extra={"file": path.name})
+            return
+        item = None
+        if row["episode_no"] is not None:
+            try:
+                item = await self.plex.find_episode(row["season"], row["episode_no"], path.name, self.series_title)
+            except Exception as e:
+                log.warning("plex lookup failed", extra={"file": path.name, "error": str(e)})
+                return  # try again next round
+        new_key = item.rating_key if item else None
+        self.app.state.execute("UPDATE library_items SET plex_rating_key=? WHERE path=?", (new_key, row["path"]))
+        if new_key:
+            log.info("plex item re-linked", extra={"file": path.name, "old_key": row["plex_rating_key"], "new_key": new_key})
+        else:
+            log.warning("plex item missing; spoiler reveal paused for this file", extra={"file": path.name})
 
     async def _spoiler_loop(self) -> None:
         while True:

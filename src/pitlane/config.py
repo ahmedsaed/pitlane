@@ -381,6 +381,34 @@ class PluginsCfg(Strict):
     enabled: list[str] = Field(default_factory=list)
 
 
+class NtfyCfg(Strict):
+    """OPS-7: warnings and errors as ntfy push notifications."""
+
+    url: str
+    topic: str = "pitlane"
+    username: str | None = None
+    password: str | None = None
+    token: str | None = None
+    level: Literal["warning", "error"] = "warning"
+    throttle: Duration = timedelta(minutes=30)
+
+    @model_validator(mode="after")
+    def _check(self) -> "NtfyCfg":
+        if not self.url.startswith(("http://", "https://")):
+            raise ValueError("url: must start with http:// or https://")
+        if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", self.topic):
+            raise ValueError("topic: letters, digits, '-' and '_' only")
+        if self.token and (self.username or self.password):
+            raise ValueError("use either token or username/password, not both")
+        if bool(self.username) != bool(self.password):
+            raise ValueError("username and password go together")
+        return self
+
+
+class NotifyCfg(Strict):
+    ntfy: NtfyCfg | None = None
+
+
 class Config(Strict):
     server: ServerCfg = Field(default_factory=ServerCfg)
     tuners: TunersCfg = Field(default_factory=TunersCfg)
@@ -394,6 +422,7 @@ class Config(Strict):
     plex: PlexCfg = Field(default_factory=PlexCfg)
     retention: RetentionCfg = Field(default_factory=RetentionCfg)
     plugins: PluginsCfg = Field(default_factory=PluginsCfg)
+    notify: NotifyCfg = Field(default_factory=NotifyCfg)
 
     # Filled by load_config, not by YAML.
     provider_cfgs: list[Any] = Field(default_factory=list, exclude=True)

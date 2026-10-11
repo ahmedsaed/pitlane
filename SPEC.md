@@ -78,6 +78,7 @@ Pitlane is a single long-running service that connects operator-configured motor
 - **OPS-4** Secrets (Plex token, provider credentials) MUST be accepted from environment variables or files and MUST NOT appear in logs, the UI, or `/metrics`.
 - **OPS-5** Logs MUST be structured JSON lines with a correlation ID per stream session and per replay job.
 - **OPS-6** Pitlane MUST be distributed as a single container image that includes `ffmpeg`, plus a plain install path.
+- **OPS-7** Pitlane MAY forward warnings and errors to an ntfy server (`notify.ntfy`). Forwarding MUST NOT block streaming; repeats of the same message for the same channel, source or file MUST be throttled; and messages MUST NOT contain secrets (OPS-4) or URL paths, which may carry provider credentials.
 
 ## 3. Non-functional requirements
 

@@ -365,6 +365,47 @@ async def test_spoiler_mode(env):
     assert await app.replays.spoiler_sync_once() == 0  # idempotent
 
 
+
+async def test_spoiler_sync_handles_items_gone_from_plex(env, caplog):
+    """A 404 for a library item is resolved once, not warned about every round."""
+    app = await env()
+    pms = env.pms
+    tmp = env.tmp
+    pms.user_views[SPOILER_TOKEN] = {}
+    for n, t in [(1705, "Race"), (1704, "Qualifying")]:
+        await app.replays.process_file(write_media(tmp / "dvr" / f"Formula 1 - S2026E{n} - Singapore Grand Prix – {t}.ts"))
+    rows = {r["episode_no"]: r for r in app.state.query("SELECT * FROM library_items")}
+    by_index = {e.index: e for e in pms.episodes.values()}
+
+    def metadata_gets() -> list[str]:
+        return [c["path"] for c in pms.calls if c["method"] == "GET" and "/metadata/" in c["path"]]
+
+    # Race: file deleted and the item removed from Plex → row dropped.
+    Path(rows[1705]["path"]).unlink()
+    del pms.episodes[by_index[1705].rating_key]
+    # Qualifying: Plex re-added the same file under a new key → row follows it.
+    ep = pms.episodes.pop(by_index[1704].rating_key)
+    ep.rating_key = "9999"
+    pms.episodes["9999"] = ep
+
+    assert await app.replays.spoiler_sync_once() == 0
+    after = {r["episode_no"]: r for r in app.state.query("SELECT * FROM library_items")}
+    assert set(after) == {1704}
+    assert after[1704]["plex_rating_key"] == "9999" and after[1704]["spoiler_state"] == "hidden"
+
+    seen = len(metadata_gets())
+    assert await app.replays.spoiler_sync_once() == 0
+    assert metadata_gets()[seen:] == ["/library/metadata/9999"]  # only the re-linked item is polled
+
+    # Item gone from Plex but the file is still there → key cleared, polling stops.
+    del pms.episodes["9999"]
+    assert await app.replays.spoiler_sync_once() == 0
+    assert app.state.one("SELECT plex_rating_key FROM library_items")["plex_rating_key"] is None
+    seen = len(metadata_gets())
+    assert await app.replays.spoiler_sync_once() == 0
+    assert metadata_gets()[seen:] == []
+    assert "viewCount read failed" not in caplog.text
+
 async def test_spoiler_disabled_writes_results(env):
     app = await env(spoiler={"enabled": False})
     tmp = env.tmp

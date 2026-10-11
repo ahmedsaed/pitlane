@@ -112,7 +112,20 @@ retention:
 plugins:
   dir: /config/plugins
   enabled: []                        # plugin PROVIDER_TYPE names to allow
+
+notify:                              # OPS-7: optional push notifications
+  ntfy:
+    url: https://ntfy.example.invalid
+    topic: pitlane
+    username: me                       # or token: ${file:/config/ntfy_token}
+    password: ${file:/config/ntfy_password}
+    level: warning                     # warning | error
+    throttle: 30m                      # same message for the same channel/source/file at most once per window
 ```
+
+### Notifications (OPS-7)
+
+With `notify.ntfy` set, every `pitlane.*` log record at or above `level` is also published to `<url>` as JSON (`topic`, `title`, `message`, `priority`, `tags`): warnings at priority 3, errors at 4. The title is the log message and the body lists its fields (channel, source, error, …). Sending runs in the background with one retry for network and 5xx errors; a failed send is logged and never re-forwarded. Secrets and URL paths are removed from every message (`http://panel.example:80/…`), so IPTV credentials embedded in stream URLs are never sent. A message held back by `throttle` is counted, and the next one that goes out says how many were held.
 
 ## Validation rules
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import ipaddress
+import logging
 import signal
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
@@ -65,8 +66,10 @@ class App:
         clock: Callable[[], datetime] | None = None,
         jolpica_url: str = JOLPICA_URL,
         start_background: bool = True,
+        notify_transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self.cfg = cfg
+        self.notify_transport = notify_transport
         self.clock = clock or (lambda: datetime.now(UTC))
         self.jolpica_url = jolpica_url
         self.start_background = start_background
@@ -84,12 +87,14 @@ class App:
         self.replays: Any = None
         self.jolpica: JolpicaClient = None  # type: ignore[assignment]
         self.reload_error: list[str] | None = None
+        self.notifier: Any = None
         self._tasks: list[asyncio.Task] = []
         self._xmltv_cache: tuple[Any, bytes, str] | None = None
         self._reload_lock = asyncio.Lock()
 
     # ------------------------------------------------------------------ lifecycle
     async def startup(self) -> None:
+        self._start_notifier()
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.state = State(self.data_dir / "pitlane.db")
         self.jolpica = JolpicaClient(self.http, self.data_dir / "jolpica", base_url=self.jolpica_url)
@@ -136,8 +141,24 @@ class App:
         if self.registry:
             await self.registry.stop()
         await self.http.aclose()
+        await self._stop_notifier()
         if self.state:
             self.state.close()
+
+    def _start_notifier(self) -> None:
+        """OPS-7: forward warnings and errors to ntfy, if configured."""
+        from .notify import handler_from_config
+
+        self.notifier = handler_from_config(self.cfg, transport=self.notify_transport)
+        if self.notifier is not None:
+            self.notifier.start()
+            logging.getLogger().addHandler(self.notifier)
+
+    async def _stop_notifier(self) -> None:
+        if self.notifier is not None:
+            logging.getLogger().removeHandler(self.notifier)
+            notifier, self.notifier = self.notifier, None
+            await notifier.stop()
 
     def _spawn(self, coro: Any, name: str) -> None:
         self._tasks.append(asyncio.get_running_loop().create_task(coro, name=name))
@@ -230,7 +251,11 @@ class App:
                 return e.errors
             self.reload_error = None
             old_registry = self.registry
+            old_notify = self.cfg.notify
             self.cfg = new
+            if new.notify != old_notify:
+                await self._stop_notifier()
+                self._start_notifier()
             self.pool.count = new.tuners.count
             self.connections.configure(new.connection_limits())
             self.health.interval = new.health.interval

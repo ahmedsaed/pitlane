@@ -107,3 +107,12 @@ retention:
 plugins:
   dir: /config/plugins
   enabled: []                        # plugin PROVIDER_TYPE names to allow
+
+notify:                              # OPS-7: optional push notifications
+  ntfy:
+    url: https://ntfy.example.invalid
+    topic: pitlane
+    username: me                       # or token: ${file:/config/ntfy_token}
+    password: ${file:/config/ntfy_password}
+    level: warning                     # warning | error
+    throttle: 30m                      # same message for the same channel/source/file at most once per window
