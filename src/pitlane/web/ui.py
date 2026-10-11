@@ -108,6 +108,11 @@ def ui_router(app: "App") -> APIRouter:
                 for s in app.pool.in_use.values()
             ],
             "tuners": {"count": app.pool.count, "in_use": len(app.pool.in_use)},
+            # LIVE-10: upstream connections per limited provider (streams, probes, closing inputs)
+            "connections": {
+                name: {"in_use": app.connections.in_use(name), "limit": limit}
+                for name, limit in sorted(app.connections.limits.items())
+            },
             "reload_error": app.reload_error,
             "provider_errors": app.registry.errors if app.registry else {},
             "replay_jobs": st.query("SELECT key, event_id, session_type, provider, title, status, attempts, last_error, updated_at FROM replay_jobs ORDER BY updated_at DESC LIMIT 100"),
@@ -138,7 +143,11 @@ def ui_router(app: "App") -> APIRouter:
         out.append(
             "<header><h1>Pitlane</h1>"
             f"<span class=muted>Tuners {s['tuners']['in_use']}/{s['tuners']['count']}</span>"
-            "<form class=inline method=post action='/ui/refresh-calendar'><button>Refresh calendar</button></form>"
+            + "".join(
+                f"<span class=muted title='Connections to this provider'>{escape(name)} connections {c['in_use']}/{c['limit']}</span>"
+                for name, c in s["connections"].items()
+            )
+            + "<form class=inline method=post action='/ui/refresh-calendar'><button>Refresh calendar</button></form>"
             "<form class=inline method=post action='/ui/reload'><button>Reload config</button></form>"
             + (
                 "<a href='/'>Hide results</a>"

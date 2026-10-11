@@ -50,7 +50,7 @@ def test_defaults_minimal():
 
 
 def test_example_config_is_valid(tmp_path):
-    for name in ("ui_password", "iptv_url", "spoiler_token"):
+    for name in ("ui_password", "iptv_url", "spoiler_token", "ntfy_password"):
         (tmp_path / name).write_text("s3cret-" + name)
     text = (ROOT / "config" / "pitlane.example.yaml").read_text().replace("/config/", f"{tmp_path}/")
     p = tmp_path / "pitlane.yaml"

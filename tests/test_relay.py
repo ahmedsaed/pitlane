@@ -427,6 +427,10 @@ async def test_limited_provider_not_probed_while_streaming(limited_harness):
             assert {s.id: s.last_probe_at for s in sources} == before  # skipped, state kept
             assert limited_harness.proxies[1].requests == 0  # B never touched
             assert app.connections.in_use("mine") == 1
+            # the dashboard shows the provider's connections next to the tuners
+            st = (await c.get("/api/status")).json()
+            assert st["connections"] == {"mine": {"in_use": 1, "limit": 1}}
+            assert "mine connections 1/1" in (await c.get("/")).text
 
 
 @needs_ffmpeg

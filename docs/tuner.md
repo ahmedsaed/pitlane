@@ -116,6 +116,8 @@ A provider with `max_connections: N` holds a lease for every upstream connection
 
 Set `tuners.count` above the provider limit when the account is the only source: with `count: 1`, PMS's overlapping channel-change request would be rejected at the tuner slot before it could wait for the connection.
 
+The web UI header shows `<provider> connections N/limit` next to the tuner count for every limited provider (`connections` in `/api/status`). N counts streams, probes and inputs still closing.
+
 ## Health checks off (LIVE-11)
 
 Each probe of a `ts`/`hls` source is a real upstream connection. For an IPTV account that is one connection per source every 5 min (every minute near a session), which is the kind of traffic a panel may flag. With `health_checks: false` on the provider:
