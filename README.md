@@ -28,7 +28,7 @@ This repository holds the specification (`SPEC.md`, `docs/`) and the implementat
 
 ## Status
 
-v1 implemented (130 tests). The live TV path (tuner, guide, playback, failover, series recording) and replay filing (drop folder, Plex metadata, title cards, spoiler mode) are verified against a real Plex Media Server; see the verification log in `docs/plex-setup.md`.
+v1 implemented (133 tests). The live TV path (tuner, guide, playback, failover, series recording) and replay filing (drop folder, Plex metadata, title cards, spoiler mode) are verified against a real Plex Media Server; see the verification log in `docs/plex-setup.md`.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e '.[test]'

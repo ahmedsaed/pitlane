@@ -14,47 +14,68 @@
     <display-name>Paddock News</display-name>
     <display-name>200</display-name>
   </channel>
-  <programme start="20261022000000 +0000" stop="20261022060000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261022000000 +0000" stop="20261022050000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-22 00:00:00</episode-num>
   </programme>
-  <programme start="20261022060000 +0000" stop="20261022120000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261022050000 +0000" stop="20261022110000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-22 06:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-22 05:00:00</episode-num>
   </programme>
-  <programme start="20261022120000 +0000" stop="20261022180000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261022110000 +0000" stop="20261022170000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-22 12:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-22 11:00:00</episode-num>
   </programme>
-  <programme start="20261022180000 +0000" stop="20261023000000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261022170000 +0000" stop="20261022230000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-22 18:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-22 17:00:00</episode-num>
   </programme>
-  <programme start="20261023000000 +0000" stop="20261023060000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261022230000 +0000" stop="20261023050000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-23 00:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-22 23:00:00</episode-num>
   </programme>
-  <programme start="20261023060000 +0000" stop="20261023120000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261023050000 +0000" stop="20261023110000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-23 06:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-23 05:00:00</episode-num>
   </programme>
-  <programme start="20261023120000 +0000" stop="20261023172000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261023110000 +0000" stop="20261023172000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-23 12:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-23 11:00:00</episode-num>
   </programme>
   <programme start="20261023172000 +0000" stop="20261023184000 +0000" channel="f1-alt.pitlane">
     <title lang="en">Formula 1</title>
@@ -63,6 +84,7 @@
     <date>20261023</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-18/1801.png"/>
     <episode-num system="xmltv_ns">2025.1800.</episode-num>
     <episode-num system="onscreen">S2026E1801</episode-num>
     <new/>
@@ -70,7 +92,10 @@
   <programme start="20261023184000 +0000" stop="20261023212000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Sprint Qualifying – Fri 23 Oct 22:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1802.png"/>
     <episode-num system="original-air-date">2026-10-23 18:40:00</episode-num>
   </programme>
   <programme start="20261023212000 +0000" stop="20261023222500 +0000" channel="f1-alt.pitlane">
@@ -80,33 +105,55 @@
     <date>20261023</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-18/1802.png"/>
     <episode-num system="xmltv_ns">2025.1801.</episode-num>
     <episode-num system="onscreen">S2026E1802</episode-num>
     <new/>
   </programme>
-  <programme start="20261023222500 +0000" stop="20261024000000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261023222500 +0000" stop="20261023230000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1803.png"/>
     <episode-num system="original-air-date">2026-10-23 22:25:00</episode-num>
   </programme>
-  <programme start="20261024000000 +0000" stop="20261024060000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261023230000 +0000" stop="20261024050000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-24 00:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1803.png"/>
+    <episode-num system="original-air-date">2026-10-23 23:00:00</episode-num>
   </programme>
-  <programme start="20261024060000 +0000" stop="20261024120000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261024050000 +0000" stop="20261024110000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-24 06:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1803.png"/>
+    <episode-num system="original-air-date">2026-10-24 05:00:00</episode-num>
   </programme>
-  <programme start="20261024120000 +0000" stop="20261024175000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261024110000 +0000" stop="20261024170000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-24 12:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1803.png"/>
+    <episode-num system="original-air-date">2026-10-24 11:00:00</episode-num>
+  </programme>
+  <programme start="20261024170000 +0000" stop="20261024175000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
+    <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1803.png"/>
+    <episode-num system="original-air-date">2026-10-24 17:00:00</episode-num>
   </programme>
   <programme start="20261024175000 +0000" stop="20261024191000 +0000" channel="f1-alt.pitlane">
     <title lang="en">Formula 1</title>
@@ -115,6 +162,7 @@
     <date>20261024</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-18/1803.png"/>
     <episode-num system="xmltv_ns">2025.1802.</episode-num>
     <episode-num system="onscreen">S2026E1803</episode-num>
     <new/>
@@ -122,7 +170,10 @@
   <programme start="20261024191000 +0000" stop="20261024215000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Qualifying – Sat 24 Oct 23:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1804.png"/>
     <episode-num system="original-air-date">2026-10-24 19:10:00</episode-num>
   </programme>
   <programme start="20261024215000 +0000" stop="20261024231000 +0000" channel="f1-alt.pitlane">
@@ -132,38 +183,45 @@
     <date>20261024</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-18/1804.png"/>
     <episode-num system="xmltv_ns">2025.1803.</episode-num>
     <episode-num system="onscreen">S2026E1804</episode-num>
     <new/>
   </programme>
-  <programme start="20261024231000 +0000" stop="20261025000000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261024231000 +0000" stop="20261025060000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1805.png"/>
     <episode-num system="original-air-date">2026-10-24 23:10:00</episode-num>
-  </programme>
-  <programme start="20261025000000 +0000" stop="20261025060000 +0000" channel="f1-alt.pitlane">
-    <title lang="en">F1 Alternate</title>
-    <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
-    <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-25 00:00:00</episode-num>
   </programme>
   <programme start="20261025060000 +0000" stop="20261025120000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1805.png"/>
     <episode-num system="original-air-date">2026-10-25 06:00:00</episode-num>
   </programme>
   <programme start="20261025120000 +0000" stop="20261025180000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1805.png"/>
     <episode-num system="original-air-date">2026-10-25 12:00:00</episode-num>
   </programme>
   <programme start="20261025180000 +0000" stop="20261025185000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1805.png"/>
     <episode-num system="original-air-date">2026-10-25 18:00:00</episode-num>
   </programme>
   <programme start="20261025185000 +0000" stop="20261025212000 +0000" channel="f1-alt.pitlane">
@@ -173,6 +231,7 @@
     <date>20261025</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-18/1805.png"/>
     <episode-num system="xmltv_ns">2025.1804.</episode-num>
     <episode-num system="onscreen">S2026E1805</episode-num>
     <new/>
@@ -180,74 +239,110 @@
   <programme start="20261025212000 +0000" stop="20261026000000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Mexico City Grand Prix: Practice 1 Fri 30 Oct 18:30 · Practice 2 Fri 30 Oct 22:00 · Practice 3 Sat 31 Oct 17:30 · Qualifying Sat 31 Oct 21:00 · Race Sun 01 Nov 20:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-19/1901.png"/>
     <episode-num system="original-air-date">2026-10-25 21:20:00</episode-num>
   </programme>
   <programme start="20261026000000 +0000" stop="20261026060000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Mexico City Grand Prix: Practice 1 Fri 30 Oct 18:30 · Practice 2 Fri 30 Oct 22:00 · Practice 3 Sat 31 Oct 17:30 · Qualifying Sat 31 Oct 21:00 · Race Sun 01 Nov 20:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-19/1901.png"/>
     <episode-num system="original-air-date">2026-10-26 00:00:00</episode-num>
   </programme>
   <programme start="20261026060000 +0000" stop="20261026120000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Mexico City Grand Prix: Practice 1 Fri 30 Oct 18:30 · Practice 2 Fri 30 Oct 22:00 · Practice 3 Sat 31 Oct 17:30 · Qualifying Sat 31 Oct 21:00 · Race Sun 01 Nov 20:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-19/1901.png"/>
     <episode-num system="original-air-date">2026-10-26 06:00:00</episode-num>
   </programme>
   <programme start="20261026120000 +0000" stop="20261026180000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Mexico City Grand Prix: Practice 1 Fri 30 Oct 18:30 · Practice 2 Fri 30 Oct 22:00 · Practice 3 Sat 31 Oct 17:30 · Qualifying Sat 31 Oct 21:00 · Race Sun 01 Nov 20:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-19/1901.png"/>
     <episode-num system="original-air-date">2026-10-26 12:00:00</episode-num>
   </programme>
   <programme start="20261026180000 +0000" stop="20261027000000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Mexico City Grand Prix: Practice 1 Fri 30 Oct 18:30 · Practice 2 Fri 30 Oct 22:00 · Practice 3 Sat 31 Oct 17:30 · Qualifying Sat 31 Oct 21:00 · Race Sun 01 Nov 20:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-19/1901.png"/>
     <episode-num system="original-air-date">2026-10-26 18:00:00</episode-num>
   </programme>
-  <programme start="20261022000000 +0000" stop="20261022060000 +0000" channel="f1-main.pitlane">
+  <programme start="20261022000000 +0000" stop="20261022050000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-22 00:00:00</episode-num>
   </programme>
-  <programme start="20261022060000 +0000" stop="20261022120000 +0000" channel="f1-main.pitlane">
+  <programme start="20261022050000 +0000" stop="20261022110000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-22 06:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-22 05:00:00</episode-num>
   </programme>
-  <programme start="20261022120000 +0000" stop="20261022180000 +0000" channel="f1-main.pitlane">
+  <programme start="20261022110000 +0000" stop="20261022170000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-22 12:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-22 11:00:00</episode-num>
   </programme>
-  <programme start="20261022180000 +0000" stop="20261023000000 +0000" channel="f1-main.pitlane">
+  <programme start="20261022170000 +0000" stop="20261022230000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-22 18:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-22 17:00:00</episode-num>
   </programme>
-  <programme start="20261023000000 +0000" stop="20261023060000 +0000" channel="f1-main.pitlane">
+  <programme start="20261022230000 +0000" stop="20261023050000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-23 00:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-22 23:00:00</episode-num>
   </programme>
-  <programme start="20261023060000 +0000" stop="20261023120000 +0000" channel="f1-main.pitlane">
+  <programme start="20261023050000 +0000" stop="20261023110000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-23 06:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-23 05:00:00</episode-num>
   </programme>
-  <programme start="20261023120000 +0000" stop="20261023172000 +0000" channel="f1-main.pitlane">
+  <programme start="20261023110000 +0000" stop="20261023172000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 18:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 18:30 · Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-23 12:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-23 11:00:00</episode-num>
   </programme>
   <programme start="20261023172000 +0000" stop="20261023184000 +0000" channel="f1-main.pitlane">
     <title lang="en">Formula 1</title>
@@ -256,6 +351,7 @@
     <date>20261023</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-18/1801.png"/>
     <episode-num system="xmltv_ns">2025.1800.</episode-num>
     <episode-num system="onscreen">S2026E1801</episode-num>
     <new/>
@@ -263,7 +359,10 @@
   <programme start="20261023184000 +0000" stop="20261023212000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Sprint Qualifying – Fri 23 Oct 22:30 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Sprint Qualifying Fri 23 Oct 22:30 · Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1802.png"/>
     <episode-num system="original-air-date">2026-10-23 18:40:00</episode-num>
   </programme>
   <programme start="20261023212000 +0000" stop="20261023222500 +0000" channel="f1-main.pitlane">
@@ -273,33 +372,55 @@
     <date>20261023</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-18/1802.png"/>
     <episode-num system="xmltv_ns">2025.1801.</episode-num>
     <episode-num system="onscreen">S2026E1802</episode-num>
     <new/>
   </programme>
-  <programme start="20261023222500 +0000" stop="20261024000000 +0000" channel="f1-main.pitlane">
+  <programme start="20261023222500 +0000" stop="20261023230000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1803.png"/>
     <episode-num system="original-air-date">2026-10-23 22:25:00</episode-num>
   </programme>
-  <programme start="20261024000000 +0000" stop="20261024060000 +0000" channel="f1-main.pitlane">
+  <programme start="20261023230000 +0000" stop="20261024050000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-24 00:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1803.png"/>
+    <episode-num system="original-air-date">2026-10-23 23:00:00</episode-num>
   </programme>
-  <programme start="20261024060000 +0000" stop="20261024120000 +0000" channel="f1-main.pitlane">
+  <programme start="20261024050000 +0000" stop="20261024110000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-24 06:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1803.png"/>
+    <episode-num system="original-air-date">2026-10-24 05:00:00</episode-num>
   </programme>
-  <programme start="20261024120000 +0000" stop="20261024175000 +0000" channel="f1-main.pitlane">
+  <programme start="20261024110000 +0000" stop="20261024170000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-24 12:00:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1803.png"/>
+    <episode-num system="original-air-date">2026-10-24 11:00:00</episode-num>
+  </programme>
+  <programme start="20261024170000 +0000" stop="20261024175000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: United States Grand Prix Sprint – Sat 24 Oct 19:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Sprint Sat 24 Oct 19:00 · Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
+    <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1803.png"/>
+    <episode-num system="original-air-date">2026-10-24 17:00:00</episode-num>
   </programme>
   <programme start="20261024175000 +0000" stop="20261024191000 +0000" channel="f1-main.pitlane">
     <title lang="en">Formula 1</title>
@@ -308,6 +429,7 @@
     <date>20261024</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-18/1803.png"/>
     <episode-num system="xmltv_ns">2025.1802.</episode-num>
     <episode-num system="onscreen">S2026E1803</episode-num>
     <new/>
@@ -315,7 +437,10 @@
   <programme start="20261024191000 +0000" stop="20261024215000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Qualifying – Sat 24 Oct 23:00 BST</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Qualifying Sat 24 Oct 23:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1804.png"/>
     <episode-num system="original-air-date">2026-10-24 19:10:00</episode-num>
   </programme>
   <programme start="20261024215000 +0000" stop="20261024231000 +0000" channel="f1-main.pitlane">
@@ -325,32 +450,36 @@
     <date>20261024</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-18/1804.png"/>
     <episode-num system="xmltv_ns">2025.1803.</episode-num>
     <episode-num system="onscreen">S2026E1804</episode-num>
     <new/>
   </programme>
-  <programme start="20261024231000 +0000" stop="20261025000000 +0000" channel="f1-main.pitlane">
+  <programme start="20261024231000 +0000" stop="20261025060000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Pre-Race Build-Up – Sun 25 Oct 17:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/logos/f1-main.png"/>
     <episode-num system="original-air-date">2026-10-24 23:10:00</episode-num>
-  </programme>
-  <programme start="20261025000000 +0000" stop="20261025060000 +0000" channel="f1-main.pitlane">
-    <title lang="en">F1 Main Feed</title>
-    <sub-title lang="en">Next: United States Grand Prix Pre-Race Build-Up – Sun 25 Oct 17:30 GMT</sub-title>
-    <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-25 00:00:00</episode-num>
   </programme>
   <programme start="20261025060000 +0000" stop="20261025120000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Pre-Race Build-Up – Sun 25 Oct 17:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/logos/f1-main.png"/>
     <episode-num system="original-air-date">2026-10-25 06:00:00</episode-num>
   </programme>
   <programme start="20261025120000 +0000" stop="20261025173000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Pre-Race Build-Up – Sun 25 Oct 17:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/logos/f1-main.png"/>
     <episode-num system="original-air-date">2026-10-25 12:00:00</episode-num>
   </programme>
   <programme start="20261025173000 +0000" stop="20261025184500 +0000" channel="f1-main.pitlane">
@@ -367,7 +496,10 @@
   <programme start="20261025184500 +0000" stop="20261025185000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Race – Sun 25 Oct 19:00 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1805.png"/>
     <episode-num system="original-air-date">2026-10-25 18:45:00</episode-num>
   </programme>
   <programme start="20261025185000 +0000" stop="20261025212000 +0000" channel="f1-main.pitlane">
@@ -377,6 +509,7 @@
     <date>20261025</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-18/1805.png"/>
     <episode-num system="xmltv_ns">2025.1804.</episode-num>
     <episode-num system="onscreen">S2026E1805</episode-num>
     <new/>
@@ -384,130 +517,165 @@
   <programme start="20261025212000 +0000" stop="20261026000000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Mexico City Grand Prix: Practice 1 Fri 30 Oct 18:30 · Practice 2 Fri 30 Oct 22:00 · Practice 3 Sat 31 Oct 17:30 · Qualifying Sat 31 Oct 21:00 · Race Sun 01 Nov 20:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-19/1901.png"/>
     <episode-num system="original-air-date">2026-10-25 21:20:00</episode-num>
   </programme>
   <programme start="20261026000000 +0000" stop="20261026060000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Mexico City Grand Prix: Practice 1 Fri 30 Oct 18:30 · Practice 2 Fri 30 Oct 22:00 · Practice 3 Sat 31 Oct 17:30 · Qualifying Sat 31 Oct 21:00 · Race Sun 01 Nov 20:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-19/1901.png"/>
     <episode-num system="original-air-date">2026-10-26 00:00:00</episode-num>
   </programme>
   <programme start="20261026060000 +0000" stop="20261026120000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Mexico City Grand Prix: Practice 1 Fri 30 Oct 18:30 · Practice 2 Fri 30 Oct 22:00 · Practice 3 Sat 31 Oct 17:30 · Qualifying Sat 31 Oct 21:00 · Race Sun 01 Nov 20:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-19/1901.png"/>
     <episode-num system="original-air-date">2026-10-26 06:00:00</episode-num>
   </programme>
   <programme start="20261026120000 +0000" stop="20261026180000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Mexico City Grand Prix: Practice 1 Fri 30 Oct 18:30 · Practice 2 Fri 30 Oct 22:00 · Practice 3 Sat 31 Oct 17:30 · Qualifying Sat 31 Oct 21:00 · Race Sun 01 Nov 20:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-19/1901.png"/>
     <episode-num system="original-air-date">2026-10-26 12:00:00</episode-num>
   </programme>
   <programme start="20261026180000 +0000" stop="20261027000000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Mexico City Grand Prix Practice 1 – Fri 30 Oct 18:30 GMT</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Mexico City Grand Prix: Practice 1 Fri 30 Oct 18:30 · Practice 2 Fri 30 Oct 22:00 · Practice 3 Sat 31 Oct 17:30 · Qualifying Sat 31 Oct 21:00 · Race Sun 01 Nov 20:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-19/1901.png"/>
     <episode-num system="original-air-date">2026-10-26 18:00:00</episode-num>
   </programme>
-  <programme start="20261022000000 +0000" stop="20261022060000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261022000000 +0000" stop="20261022050000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-22 00:00:00</episode-num>
   </programme>
-  <programme start="20261022060000 +0000" stop="20261022120000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261022050000 +0000" stop="20261022110000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-22 06:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-22 05:00:00</episode-num>
   </programme>
-  <programme start="20261022120000 +0000" stop="20261022180000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261022110000 +0000" stop="20261022170000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-22 12:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-22 11:00:00</episode-num>
   </programme>
-  <programme start="20261022180000 +0000" stop="20261023000000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261022170000 +0000" stop="20261022230000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-22 18:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-22 17:00:00</episode-num>
   </programme>
-  <programme start="20261023000000 +0000" stop="20261023060000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261022230000 +0000" stop="20261023050000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-23 00:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-22 23:00:00</episode-num>
   </programme>
-  <programme start="20261023060000 +0000" stop="20261023120000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261023050000 +0000" stop="20261023110000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-23 06:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-23 05:00:00</episode-num>
   </programme>
-  <programme start="20261023120000 +0000" stop="20261023180000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261023110000 +0000" stop="20261023170000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-23 12:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-23 11:00:00</episode-num>
   </programme>
-  <programme start="20261023180000 +0000" stop="20261024000000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261023170000 +0000" stop="20261023230000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-23 18:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-23 17:00:00</episode-num>
   </programme>
-  <programme start="20261024000000 +0000" stop="20261024060000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261023230000 +0000" stop="20261024050000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-24 00:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-23 23:00:00</episode-num>
   </programme>
-  <programme start="20261024060000 +0000" stop="20261024120000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261024050000 +0000" stop="20261024110000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-24 06:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-24 05:00:00</episode-num>
   </programme>
-  <programme start="20261024120000 +0000" stop="20261024180000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261024110000 +0000" stop="20261024170000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-24 12:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-24 11:00:00</episode-num>
   </programme>
-  <programme start="20261024180000 +0000" stop="20261025000000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261024170000 +0000" stop="20261024230000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-24 18:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-24 17:00:00</episode-num>
   </programme>
-  <programme start="20261025000000 +0000" stop="20261025060000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+  <programme start="20261024230000 +0000" stop="20261025060000 +0000" channel="news.pitlane">
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-25 00:00:00</episode-num>
+    <episode-num system="original-air-date">2026-10-24 23:00:00</episode-num>
   </programme>
   <programme start="20261025060000 +0000" stop="20261025120000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-25 06:00:00</episode-num>
   </programme>
   <programme start="20261025120000 +0000" stop="20261025180000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-25 12:00:00</episode-num>
   </programme>
   <programme start="20261025180000 +0000" stop="20261026000000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-25 18:00:00</episode-num>
   </programme>
   <programme start="20261026000000 +0000" stop="20261026060000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-26 00:00:00</episode-num>
   </programme>
   <programme start="20261026060000 +0000" stop="20261026120000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-26 06:00:00</episode-num>
   </programme>
   <programme start="20261026120000 +0000" stop="20261026180000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-26 12:00:00</episode-num>
   </programme>
   <programme start="20261026180000 +0000" stop="20261027000000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-26 18:00:00</episode-num>
   </programme>

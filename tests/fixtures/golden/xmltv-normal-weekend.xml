@@ -17,37 +17,55 @@
   <programme start="20261008000000 +0000" stop="20261008060000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-08 00:00:00</episode-num>
   </programme>
   <programme start="20261008060000 +0000" stop="20261008120000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-08 06:00:00</episode-num>
   </programme>
   <programme start="20261008120000 +0000" stop="20261008180000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-08 12:00:00</episode-num>
   </programme>
   <programme start="20261008180000 +0000" stop="20261009000000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-08 18:00:00</episode-num>
   </programme>
   <programme start="20261009000000 +0000" stop="20261009060000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-09 00:00:00</episode-num>
   </programme>
   <programme start="20261009060000 +0000" stop="20261009092000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-09 06:00:00</episode-num>
   </programme>
   <programme start="20261009092000 +0000" stop="20261009104000 +0000" channel="f1-alt.pitlane">
@@ -57,15 +75,28 @@
     <date>20261009</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-17/1701.png"/>
     <episode-num system="xmltv_ns">2025.1700.</episode-num>
     <episode-num system="onscreen">S2026E1701</episode-num>
     <new/>
   </programme>
-  <programme start="20261009104000 +0000" stop="20261009125000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261009104000 +0000" stop="20261009120000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 2 – Fri 09 Oct 13:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1702.png"/>
     <episode-num system="original-air-date">2026-10-09 10:40:00</episode-num>
+  </programme>
+  <programme start="20261009120000 +0000" stop="20261009125000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 2 – Fri 09 Oct 13:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
+    <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1702.png"/>
+    <episode-num system="original-air-date">2026-10-09 12:00:00</episode-num>
   </programme>
   <programme start="20261009125000 +0000" stop="20261009141000 +0000" channel="f1-alt.pitlane">
     <title lang="en">Formula 1</title>
@@ -74,32 +105,45 @@
     <date>20261009</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-17/1702.png"/>
     <episode-num system="xmltv_ns">2025.1701.</episode-num>
     <episode-num system="onscreen">S2026E1702</episode-num>
     <new/>
   </programme>
-  <programme start="20261009141000 +0000" stop="20261009201000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261009141000 +0000" stop="20261009180000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1703.png"/>
     <episode-num system="original-air-date">2026-10-09 14:10:00</episode-num>
   </programme>
-  <programme start="20261009201000 +0000" stop="20261010000000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261009180000 +0000" stop="20261010000000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-09 20:10:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1703.png"/>
+    <episode-num system="original-air-date">2026-10-09 18:00:00</episode-num>
   </programme>
   <programme start="20261010000000 +0000" stop="20261010060000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1703.png"/>
     <episode-num system="original-air-date">2026-10-10 00:00:00</episode-num>
   </programme>
   <programme start="20261010060000 +0000" stop="20261010092000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1703.png"/>
     <episode-num system="original-air-date">2026-10-10 06:00:00</episode-num>
   </programme>
   <programme start="20261010092000 +0000" stop="20261010104000 +0000" channel="f1-alt.pitlane">
@@ -109,15 +153,28 @@
     <date>20261010</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-17/1703.png"/>
     <episode-num system="xmltv_ns">2025.1702.</episode-num>
     <episode-num system="onscreen">S2026E1703</episode-num>
     <new/>
   </programme>
-  <programme start="20261010104000 +0000" stop="20261010125000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261010104000 +0000" stop="20261010120000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Qualifying – Sat 10 Oct 13:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1704.png"/>
     <episode-num system="original-air-date">2026-10-10 10:40:00</episode-num>
+  </programme>
+  <programme start="20261010120000 +0000" stop="20261010125000 +0000" channel="f1-alt.pitlane">
+    <title lang="en">F1 Alternate</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Qualifying – Sat 10 Oct 13:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
+    <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1704.png"/>
+    <episode-num system="original-air-date">2026-10-10 12:00:00</episode-num>
   </programme>
   <programme start="20261010125000 +0000" stop="20261010141000 +0000" channel="f1-alt.pitlane">
     <title lang="en">Formula 1</title>
@@ -126,32 +183,45 @@
     <date>20261010</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-17/1704.png"/>
     <episode-num system="xmltv_ns">2025.1703.</episode-num>
     <episode-num system="onscreen">S2026E1704</episode-num>
     <new/>
   </programme>
-  <programme start="20261010141000 +0000" stop="20261010201000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261010141000 +0000" stop="20261010180000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1705.png"/>
     <episode-num system="original-air-date">2026-10-10 14:10:00</episode-num>
   </programme>
-  <programme start="20261010201000 +0000" stop="20261011000000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261010180000 +0000" stop="20261011000000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-10 20:10:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1705.png"/>
+    <episode-num system="original-air-date">2026-10-10 18:00:00</episode-num>
   </programme>
   <programme start="20261011000000 +0000" stop="20261011060000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1705.png"/>
     <episode-num system="original-air-date">2026-10-11 00:00:00</episode-num>
   </programme>
   <programme start="20261011060000 +0000" stop="20261011115000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the Singapore Grand Prix: Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1705.png"/>
     <episode-num system="original-air-date">2026-10-11 06:00:00</episode-num>
   </programme>
   <programme start="20261011115000 +0000" stop="20261011142000 +0000" channel="f1-alt.pitlane">
@@ -161,80 +231,117 @@
     <date>20261011</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-17/1705.png"/>
     <episode-num system="xmltv_ns">2025.1704.</episode-num>
     <episode-num system="onscreen">S2026E1705</episode-num>
     <new/>
   </programme>
-  <programme start="20261011142000 +0000" stop="20261011202000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261011142000 +0000" stop="20261011180000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-11 14:20:00</episode-num>
   </programme>
-  <programme start="20261011202000 +0000" stop="20261012000000 +0000" channel="f1-alt.pitlane">
+  <programme start="20261011180000 +0000" stop="20261012000000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-11 20:20:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-11 18:00:00</episode-num>
   </programme>
   <programme start="20261012000000 +0000" stop="20261012060000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-12 00:00:00</episode-num>
   </programme>
   <programme start="20261012060000 +0000" stop="20261012120000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-12 06:00:00</episode-num>
   </programme>
   <programme start="20261012120000 +0000" stop="20261012180000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-12 12:00:00</episode-num>
   </programme>
   <programme start="20261012180000 +0000" stop="20261013000000 +0000" channel="f1-alt.pitlane">
     <title lang="en">F1 Alternate</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Alternate right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-12 18:00:00</episode-num>
   </programme>
   <programme start="20261008000000 +0000" stop="20261008060000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-08 00:00:00</episode-num>
   </programme>
   <programme start="20261008060000 +0000" stop="20261008120000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-08 06:00:00</episode-num>
   </programme>
   <programme start="20261008120000 +0000" stop="20261008180000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-08 12:00:00</episode-num>
   </programme>
   <programme start="20261008180000 +0000" stop="20261009000000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-08 18:00:00</episode-num>
   </programme>
   <programme start="20261009000000 +0000" stop="20261009060000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-09 00:00:00</episode-num>
   </programme>
   <programme start="20261009060000 +0000" stop="20261009092000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 1 – Fri 09 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30 · Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1701.png"/>
     <episode-num system="original-air-date">2026-10-09 06:00:00</episode-num>
   </programme>
   <programme start="20261009092000 +0000" stop="20261009104000 +0000" channel="f1-main.pitlane">
@@ -244,15 +351,28 @@
     <date>20261009</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-17/1701.png"/>
     <episode-num system="xmltv_ns">2025.1700.</episode-num>
     <episode-num system="onscreen">S2026E1701</episode-num>
     <new/>
   </programme>
-  <programme start="20261009104000 +0000" stop="20261009125000 +0000" channel="f1-main.pitlane">
+  <programme start="20261009104000 +0000" stop="20261009120000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 2 – Fri 09 Oct 13:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1702.png"/>
     <episode-num system="original-air-date">2026-10-09 10:40:00</episode-num>
+  </programme>
+  <programme start="20261009120000 +0000" stop="20261009125000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Practice 2 – Fri 09 Oct 13:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 2 Fri 09 Oct 13:00 · Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
+    <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1702.png"/>
+    <episode-num system="original-air-date">2026-10-09 12:00:00</episode-num>
   </programme>
   <programme start="20261009125000 +0000" stop="20261009141000 +0000" channel="f1-main.pitlane">
     <title lang="en">Formula 1</title>
@@ -261,32 +381,45 @@
     <date>20261009</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-17/1702.png"/>
     <episode-num system="xmltv_ns">2025.1701.</episode-num>
     <episode-num system="onscreen">S2026E1702</episode-num>
     <new/>
   </programme>
-  <programme start="20261009141000 +0000" stop="20261009201000 +0000" channel="f1-main.pitlane">
+  <programme start="20261009141000 +0000" stop="20261009180000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1703.png"/>
     <episode-num system="original-air-date">2026-10-09 14:10:00</episode-num>
   </programme>
-  <programme start="20261009201000 +0000" stop="20261010000000 +0000" channel="f1-main.pitlane">
+  <programme start="20261009180000 +0000" stop="20261010000000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-09 20:10:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1703.png"/>
+    <episode-num system="original-air-date">2026-10-09 18:00:00</episode-num>
   </programme>
   <programme start="20261010000000 +0000" stop="20261010060000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1703.png"/>
     <episode-num system="original-air-date">2026-10-10 00:00:00</episode-num>
   </programme>
   <programme start="20261010060000 +0000" stop="20261010092000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Practice 3 – Sat 10 Oct 09:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Practice 3 Sat 10 Oct 09:30 · Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1703.png"/>
     <episode-num system="original-air-date">2026-10-10 06:00:00</episode-num>
   </programme>
   <programme start="20261010092000 +0000" stop="20261010104000 +0000" channel="f1-main.pitlane">
@@ -296,15 +429,28 @@
     <date>20261010</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-17/1703.png"/>
     <episode-num system="xmltv_ns">2025.1702.</episode-num>
     <episode-num system="onscreen">S2026E1703</episode-num>
     <new/>
   </programme>
-  <programme start="20261010104000 +0000" stop="20261010125000 +0000" channel="f1-main.pitlane">
+  <programme start="20261010104000 +0000" stop="20261010120000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Qualifying – Sat 10 Oct 13:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1704.png"/>
     <episode-num system="original-air-date">2026-10-10 10:40:00</episode-num>
+  </programme>
+  <programme start="20261010120000 +0000" stop="20261010125000 +0000" channel="f1-main.pitlane">
+    <title lang="en">F1 Main Feed</title>
+    <sub-title lang="en">Next: Singapore Grand Prix Qualifying – Sat 10 Oct 13:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Qualifying Sat 10 Oct 13:00 · Race Sun 11 Oct 12:00</desc>
+    <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1704.png"/>
+    <episode-num system="original-air-date">2026-10-10 12:00:00</episode-num>
   </programme>
   <programme start="20261010125000 +0000" stop="20261010141000 +0000" channel="f1-main.pitlane">
     <title lang="en">Formula 1</title>
@@ -313,32 +459,45 @@
     <date>20261010</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-17/1704.png"/>
     <episode-num system="xmltv_ns">2025.1703.</episode-num>
     <episode-num system="onscreen">S2026E1704</episode-num>
     <new/>
   </programme>
-  <programme start="20261010141000 +0000" stop="20261010201000 +0000" channel="f1-main.pitlane">
+  <programme start="20261010141000 +0000" stop="20261010180000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1705.png"/>
     <episode-num system="original-air-date">2026-10-10 14:10:00</episode-num>
   </programme>
-  <programme start="20261010201000 +0000" stop="20261011000000 +0000" channel="f1-main.pitlane">
+  <programme start="20261010180000 +0000" stop="20261011000000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-10 20:10:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1705.png"/>
+    <episode-num system="original-air-date">2026-10-10 18:00:00</episode-num>
   </programme>
   <programme start="20261011000000 +0000" stop="20261011060000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1705.png"/>
     <episode-num system="original-air-date">2026-10-11 00:00:00</episode-num>
   </programme>
   <programme start="20261011060000 +0000" stop="20261011115000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: Singapore Grand Prix Race – Sun 11 Oct 12:00 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the Singapore Grand Prix: Race Sun 11 Oct 12:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-17/1705.png"/>
     <episode-num system="original-air-date">2026-10-11 06:00:00</episode-num>
   </programme>
   <programme start="20261011115000 +0000" stop="20261011142000 +0000" channel="f1-main.pitlane">
@@ -348,143 +507,182 @@
     <date>20261011</date>
     <category lang="en">Sports</category>
     <category lang="en">Motorsport</category>
+    <icon src="http://192.168.1.10:5004/static/cards/2026-17/1705.png"/>
     <episode-num system="xmltv_ns">2025.1704.</episode-num>
     <episode-num system="onscreen">S2026E1705</episode-num>
     <new/>
   </programme>
-  <programme start="20261011142000 +0000" stop="20261011202000 +0000" channel="f1-main.pitlane">
+  <programme start="20261011142000 +0000" stop="20261011180000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-11 14:20:00</episode-num>
   </programme>
-  <programme start="20261011202000 +0000" stop="20261012000000 +0000" channel="f1-main.pitlane">
+  <programme start="20261011180000 +0000" stop="20261012000000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
-    <episode-num system="original-air-date">2026-10-11 20:20:00</episode-num>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
+    <episode-num system="original-air-date">2026-10-11 18:00:00</episode-num>
   </programme>
   <programme start="20261012000000 +0000" stop="20261012060000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-12 00:00:00</episode-num>
   </programme>
   <programme start="20261012060000 +0000" stop="20261012120000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-12 06:00:00</episode-num>
   </programme>
   <programme start="20261012120000 +0000" stop="20261012180000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-12 12:00:00</episode-num>
   </programme>
   <programme start="20261012180000 +0000" stop="20261013000000 +0000" channel="f1-main.pitlane">
     <title lang="en">F1 Main Feed</title>
     <sub-title lang="en">Next: United States Grand Prix Practice 1 – Fri 23 Oct 17:30 UTC</sub-title>
+    <desc lang="en">Nothing live on F1 Main Feed right now.
+Coming up at the United States Grand Prix: Practice 1 Fri 23 Oct 17:30 · Sprint Qualifying Fri 23 Oct 21:30 · Sprint Sat 24 Oct 18:00 · Qualifying Sat 24 Oct 22:00 · Race Sun 25 Oct 19:00</desc>
     <category lang="en">Series</category>
+    <icon src="http://192.168.1.10:5004/static/cards/next/2026-18/1801.png"/>
     <episode-num system="original-air-date">2026-10-12 18:00:00</episode-num>
   </programme>
   <programme start="20261008000000 +0000" stop="20261008060000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-08 00:00:00</episode-num>
   </programme>
   <programme start="20261008060000 +0000" stop="20261008120000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-08 06:00:00</episode-num>
   </programme>
   <programme start="20261008120000 +0000" stop="20261008180000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-08 12:00:00</episode-num>
   </programme>
   <programme start="20261008180000 +0000" stop="20261009000000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-08 18:00:00</episode-num>
   </programme>
   <programme start="20261009000000 +0000" stop="20261009060000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-09 00:00:00</episode-num>
   </programme>
   <programme start="20261009060000 +0000" stop="20261009120000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-09 06:00:00</episode-num>
   </programme>
   <programme start="20261009120000 +0000" stop="20261009180000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-09 12:00:00</episode-num>
   </programme>
   <programme start="20261009180000 +0000" stop="20261010000000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-09 18:00:00</episode-num>
   </programme>
   <programme start="20261010000000 +0000" stop="20261010060000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-10 00:00:00</episode-num>
   </programme>
   <programme start="20261010060000 +0000" stop="20261010120000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-10 06:00:00</episode-num>
   </programme>
   <programme start="20261010120000 +0000" stop="20261010180000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-10 12:00:00</episode-num>
   </programme>
   <programme start="20261010180000 +0000" stop="20261011000000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-10 18:00:00</episode-num>
   </programme>
   <programme start="20261011000000 +0000" stop="20261011060000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-11 00:00:00</episode-num>
   </programme>
   <programme start="20261011060000 +0000" stop="20261011120000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-11 06:00:00</episode-num>
   </programme>
   <programme start="20261011120000 +0000" stop="20261011180000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-11 12:00:00</episode-num>
   </programme>
   <programme start="20261011180000 +0000" stop="20261012000000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-11 18:00:00</episode-num>
   </programme>
   <programme start="20261012000000 +0000" stop="20261012060000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-12 00:00:00</episode-num>
   </programme>
   <programme start="20261012060000 +0000" stop="20261012120000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-12 06:00:00</episode-num>
   </programme>
   <programme start="20261012120000 +0000" stop="20261012180000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-12 12:00:00</episode-num>
   </programme>
   <programme start="20261012180000 +0000" stop="20261013000000 +0000" channel="news.pitlane">
-    <title lang="en">Paddock News</title>
+    <title lang="en">Paddock News – Live</title>
+    <desc lang="en">Live sports on Paddock News. The provider publishes no listings for this channel.</desc>
     <category lang="en">Series</category>
     <episode-num system="original-air-date">2026-10-12 18:00:00</episode-num>
   </programme>

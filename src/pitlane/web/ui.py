@@ -302,6 +302,21 @@ def ui_router(app: "App") -> APIRouter:
         app.replays.retry_download(f.get("key", ""))
         return RedirectResponse("/?msg=" + quote("Download re-queued"), status_code=303)
 
+    @r.get("/static/cards/next/{event_id}/{episode}.png")
+    async def next_card(event_id: str, episode: int):
+        """Guide artwork for F1 filler (docs/epg.md): the session that is on next."""
+        import asyncio
+        from zoneinfo import ZoneInfo
+
+        from ..replays.titlecard import render_next_card
+
+        ev = app.calendar.event(event_id)
+        s = app.calendar.session_by_episode(ev.season, episode) if ev else None
+        if ev is None or s is None:
+            return Response(status_code=404)
+        png = await asyncio.to_thread(render_next_card, ev, s, ZoneInfo(app.cfg.epg.timezone))
+        return Response(png, media_type="image/png", headers={"Cache-Control": "max-age=86400"})
+
     @r.get("/static/cards/{event_id}/{episode}.png")
     async def card(event_id: str, episode: int):
         from ..replays.titlecard import render_card

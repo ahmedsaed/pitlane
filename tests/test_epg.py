@@ -203,7 +203,7 @@ def _check_invariants(progs, w_start, w_end, filler_max):
         if p.is_filler:
             assert p.stop - p.start <= filler_max
             assert not p.new
-            # split at midnight UTC
+            # split at midnight (UTC in these configs)
             assert p.start.date() == (p.stop - timedelta(microseconds=1)).date()
     for a, b in zip(progs, progs[1:]):
         assert a.stop <= b.start, "programmes overlap"
@@ -257,7 +257,9 @@ def test_filler_is_presented_as_tv(calendar_2026):
     fillers = [p for p in root.findall("programme") if p.findtext("title") != "Formula 1"]
     assert fillers
     for p in fillers:
-        assert p.findtext("title") == names[p.get("channel")]
+        # F1 channels: the channel name; channels without a series: "{name} – Live"
+        live = p.get("channel") == "news.pitlane"
+        assert p.findtext("title") == names[p.get("channel")] + (" – Live" if live else "")
         assert [c.text for c in p.findall("category")] == ["Series"]
         start = datetime.strptime(p.get("start"), "%Y%m%d%H%M%S %z")
         oad = p.find("episode-num[@system='original-air-date']")
@@ -267,3 +269,45 @@ def test_filler_is_presented_as_tv(calendar_2026):
     sessions = [p for p in root.findall("programme") if p.findtext("title") == "Formula 1"]
     assert all(p.find("episode-num[@system='original-air-date']") is None for p in sessions)
     assert all("Series" not in [c.text for c in p.findall("category")] for p in sessions)
+
+
+def test_filler_blocks_follow_local_time(calendar_2026):
+    """Filler blocks start at local midnight + multiples of filler_max; slivers under 30 min merge."""
+    from zoneinfo import ZoneInfo
+
+    cairo = ZoneInfo("Africa/Cairo")
+    cfg = make_cfg(timezone="Africa/Cairo", filler_max="3h")
+    progs = build_programmes(cfg, {"f1": calendar_2026}, datetime(2026, 10, 9, 8, tzinfo=UTC))
+    news = progs["news"]
+    starts = [p.start.astimezone(cairo) for p in news[1:]]  # the first block starts at the window edge
+    assert all(t.minute == 0 and t.hour % 3 == 0 for t in starts)
+    assert all(p.start.astimezone(cairo).date() == (p.stop - timedelta(microseconds=1)).astimezone(cairo).date() for p in news)
+    for p in progs["f1-main"]:
+        if p.is_filler:
+            assert p.stop - p.start <= timedelta(hours=3, minutes=30)
+
+
+def test_filler_text_and_artwork(calendar_2026):
+    cfg = make_cfg()
+    progs = build_programmes(cfg, {"f1": calendar_2026}, datetime(2026, 10, 9, 8, tzinfo=UTC), BASE)
+    f1 = next(p for p in progs["f1-alt"] if p.is_filler)
+    assert f1.desc.startswith("Nothing live on F1 Alternate right now.\nComing up at the Singapore Grand Prix: Practice 1 Fri 09 Oct 09:30")
+    assert f1.icon == f"{BASE}/static/cards/next/2026-17/1701.png"
+    race = next(p for p in progs["f1-main"] if p.sub_title == "Singapore Grand Prix – Race")
+    assert race.icon == f"{BASE}/static/cards/2026-17/1705.png"
+    news = progs["news"][0]
+    assert news.title == "Paddock News – Live" and news.sub_title is None
+    assert news.desc == "Live sports on Paddock News. The provider publishes no listings for this channel."
+    assert news.icon is None  # no configured logo
+    main = next(p for p in progs["f1-main"] if p.is_filler)
+    assert main.icon.endswith("/static/cards/next/2026-17/1701.png")
+
+
+def test_next_up_card(calendar_2026):
+    from zoneinfo import ZoneInfo
+
+    from pitlane.replays.titlecard import render_next_card
+
+    ev = calendar_2026.event("2026-17")
+    png = render_next_card(ev, ev.sessions[0], ZoneInfo("Africa/Cairo"))
+    assert png[:8] == b"\x89PNG\r\n\x1a\n" and len(png) > 5000

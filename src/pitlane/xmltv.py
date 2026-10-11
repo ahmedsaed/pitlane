@@ -8,7 +8,7 @@ bytes.
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from xml.sax.saxutils import escape, quoteattr
 from zoneinfo import ZoneInfo
@@ -46,6 +46,10 @@ class Programme:
     official_start: datetime | None = None
     next_label: str | None = None  # for filler sub-titles
     original_air_date: datetime | None = None  # filler: date-based episode number
+    icon: str | None = None
+    # The session this programme shows (filler: the next one), for artwork and descriptions.
+    event: Event | None = field(default=None, compare=False, repr=False)
+    session: Session | None = field(default=None, compare=False, repr=False)
 
     @property
     def onscreen(self) -> str | None:
@@ -120,6 +124,8 @@ def _session_programmes(ch: ChannelCfg, cfg: Config, calendars: dict[str, Calend
                         date=s.starts_at,
                         new=True,
                         official_start=s.starts_at,
+                        event=ev,
+                        session=s,
                     )
                 )
             # EPG-7 manual programmes, anchored to a session type of each event.
@@ -146,6 +152,7 @@ def _session_programmes(ch: ChannelCfg, cfg: Config, calendars: dict[str, Calend
                         # single series rule (EPG-6) records them too.
                         new=True,
                         official_start=start,
+                        event=ev,
                     )
                 )
     return progs
@@ -175,10 +182,45 @@ def _next_label(p: Programme, tz: ZoneInfo) -> str:
     return f"{name.replace(f' {EN_DASH} ', ' ')} {EN_DASH} {when}"
 
 
+def _when(dt: datetime, tz: ZoneInfo) -> str:
+    local = dt.astimezone(tz)
+    return f"{_DAYS[local.weekday()]} {local.day:02d} {_MONTHS[local.month - 1]} {local:%H:%M}"
+
+
+def _filler_desc(ch: ChannelCfg, nxt: Programme | None, tz: ZoneInfo) -> str:
+    if not ch.series:
+        return f"Live sports on {ch.name}. The provider publishes no listings for this channel."
+    if nxt is None or nxt.official_start is None:
+        return f"Nothing live on {ch.name} right now."
+    lines = [f"Nothing live on {ch.name} right now."]
+    ev = nxt.event
+    upcoming = [s for s in ev.sessions if s.starts_at >= nxt.official_start] if ev is not None else []
+    if upcoming:
+        lines.append(f"Coming up at the {ev.name}: " + " · ".join(f"{s.title} {_when(s.starts_at, tz)}" for s in upcoming))
+    return "\n".join(lines)
+
+
+def _boundaries(t: datetime, step: timedelta, tz: ZoneInfo) -> datetime:
+    """Next block boundary after ``t``: local midnight plus whole multiples of ``step``,
+    so filler blocks line up with the viewer's clock (00:00, 03:00, … local)."""
+    local = t.astimezone(tz)
+    midnight = local.replace(hour=0, minute=0, second=0, microsecond=0)
+    tomorrow = midnight + timedelta(days=1)  # aware arithmetic is wall-clock time
+    nxt = midnight
+    while nxt.astimezone(UTC) <= t and nxt < tomorrow:
+        nxt = nxt + step
+    return min(nxt, tomorrow).astimezone(UTC)
+
+
+MIN_FILLER = timedelta(minutes=30)
+
+
 def _fillers(
     ch: ChannelCfg, progs: list[Programme], w_start: datetime, w_end: datetime, cfg: Config
 ) -> list[Programme]:
-    """EPG-5: fill every gap inside the window; split at midnight UTC and at ``filler_max``."""
+    """EPG-5: fill every gap inside the window, in blocks aligned to local time
+    (``filler_max`` long, never across local midnight). A leading or trailing piece
+    shorter than 30 min joins its neighbour block instead of standing alone."""
     tz = ZoneInfo(cfg.epg.timezone)
     cid = xmltv_channel_id(ch.id)
     fillers: list[Programme] = []
@@ -195,43 +237,71 @@ def _fillers(
         following = next((p for p in progs if p.start >= w_end), None)
         gaps.append((cursor, w_end, following))
 
+    title = ch.name if ch.series else f"{ch.name} {EN_DASH} Live"
     for g_start, g_end, nxt in gaps:
-        t = g_start
-        while t < g_end:
-            midnight = (t + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-            seg_end = min(g_end, midnight, t + cfg.epg.filler_max)
+        cuts = [g_start]
+        while cuts[-1] < g_end:
+            cuts.append(min(g_end, _boundaries(cuts[-1], cfg.epg.filler_max, tz)))
+        # Merge slivers into a neighbour unless that would cross local midnight.
+        def same_day(a: datetime, b: datetime) -> bool:
+            return a.astimezone(tz).date() == (b - timedelta(microseconds=1)).astimezone(tz).date()
+
+        if len(cuts) > 2 and cuts[1] - cuts[0] < MIN_FILLER and same_day(cuts[0], cuts[2]):
+            del cuts[1]
+        if len(cuts) > 2 and cuts[-1] - cuts[-2] < MIN_FILLER and same_day(cuts[-3], cuts[-1]):
+            del cuts[-2]
+        for t, seg_end in zip(cuts, cuts[1:]):
             fillers.append(
                 Programme(
                     channel=cid,
                     start=t,
                     stop=seg_end,
-                    title=ch.name,
+                    title=title,
                     # QA-002: no next session known → no sub-title.
-                    sub_title=f"Next: {_next_label(nxt, tz)}" if nxt is not None else None,
+                    sub_title=f"Next: {_next_label(nxt, tz)}" if ch.series and nxt is not None else None,
+                    desc=_filler_desc(ch, nxt, tz),
                     # docs/epg.md: filler is presented as TV programming, not a movie
                     # (category Series + date-based episode number). Never <new/>, and the
                     # channel-name title keeps it out of the series rule.
                     categories=("Series",),
                     original_air_date=t,
                     is_filler=True,
+                    event=nxt.event if ch.series and nxt is not None else None,
+                    session=nxt.session if ch.series and nxt is not None else None,
                 )
             )
-            t = seg_end
     return fillers
 
 
 def build_programmes(
-    cfg: Config, calendars: dict[str, Calendar], now: datetime
+    cfg: Config,
+    calendars: dict[str, Calendar],
+    now: datetime,
+    base_url: str = "",
 ) -> dict[str, list[Programme]]:
     w_start, w_end = guide_window(now, cfg)
+    base_url = base_url.rstrip("/")
     result: dict[str, list[Programme]] = {}
     for ch in sorted(cfg.channels, key=lambda c: c.id):
         all_progs = _resolve_overlaps(_session_programmes(ch, cfg, calendars))
         in_window = [p for p in all_progs if p.stop > w_start and p.start < w_end]
         # Filler looks at programmes after the window too, for the "Next:" label.
         fill = _fillers(ch, [p for p in all_progs if p.stop > w_start], w_start, w_end, cfg)
-        result[ch.id] = sorted(in_window + fill, key=lambda p: p.start)
+        progs = sorted(in_window + fill, key=lambda p: p.start)
+        logo = _logo_url(ch, base_url)
+        for p in progs:
+            p.icon = _icon(p, base_url, logo)
+        result[ch.id] = progs
     return result
+
+
+def _icon(p: Programme, base_url: str, logo: str | None) -> str | None:
+    """Programme artwork: the session's title card, a "next up" card for F1 filler,
+    the channel logo for other filler. Manual programmes have no card."""
+    if p.event is not None and p.session is not None:
+        kind = "next/" if p.is_filler else ""
+        return f"{base_url}/static/cards/{kind}{p.event.id}/{p.session.episode_no}.png"
+    return logo if p.is_filler else None
 
 
 def _ts(dt: datetime) -> str:
@@ -250,7 +320,7 @@ def _logo_url(ch: ChannelCfg, base_url: str) -> str | None:
 
 def render_xmltv(cfg: Config, calendars: dict[str, Calendar], now: datetime, base_url: str) -> bytes:
     base_url = base_url.rstrip("/")
-    programmes = build_programmes(cfg, calendars, now)
+    programmes = build_programmes(cfg, calendars, now, base_url)
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<!DOCTYPE tv SYSTEM "xmltv.dtd">',
@@ -281,6 +351,8 @@ def render_xmltv(cfg: Config, calendars: dict[str, Calendar], now: datetime, bas
                 lines.append(f"    <date>{p.date.astimezone(UTC).strftime('%Y%m%d')}</date>")
             for c in p.categories:
                 lines.append(f'    <category lang="en">{escape(c)}</category>')
+            if p.icon:
+                lines.append(f"    <icon src={quoteattr(p.icon)}/>")
             if p.xmltv_ns:
                 lines.append(f'    <episode-num system="xmltv_ns">{p.xmltv_ns}</episode-num>')
                 lines.append(f'    <episode-num system="onscreen">{p.onscreen}</episode-num>')
