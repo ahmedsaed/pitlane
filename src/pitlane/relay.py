@@ -309,6 +309,8 @@ class RelayHooks:
     limiter: ConnectionLimiter | None = None
     # docs/vod.md "Play now": builds the (unstarted) input for a ``vod`` source
     open_vod: Callable[[Any], Awaitable[Any]] | None = None
+    # True when the picked title plays from the library (no provider connection needed)
+    vod_is_local: Callable[[], bool] | None = None
 
 
 class TuneFailed(Exception):
@@ -411,6 +413,8 @@ class StreamSession:
         limiter = self.hooks.limiter
         if limiter is None:
             return None
+        if src.kind == "vod" and self.hooks.vod_is_local is not None and self.hooks.vod_is_local():
+            return None  # a downloaded title plays from disk: no connection to the provider
         if limiter.held_until(src.provider) is not None:
             log.info("provider connection freed by the operator; source skipped", extra={"channel": self.channel.id, "source": src.id})
             return False

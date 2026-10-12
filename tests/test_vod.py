@@ -15,6 +15,7 @@ from pitlane.connections import ConnectionLimiter
 from conftest import needs_ffmpeg
 
 MEDIA = make_media()
+LONG_MEDIA = make_media(20)
 
 
 @pytest.fixture
@@ -360,6 +361,10 @@ async def test_pages_render_without_credentials(tmp_path, panel):
         assert st["free"]["movie"] and st["queued"] == 1
         resp = await client.post("/vod/request/episodes", data={"id": "501", "season": "1"})
         assert resp.status_code == 303 and "2%20episode" in resp.headers["location"]
+        resp = await client.post("/vod/request/episodes", data={"id": "501", "only": "9101", "ep": ["9001"]}, headers={"Accept": "application/json"})
+        assert resp.json()["msg"].startswith("1 episode added")  # the row's own button: only that episode
+        assert app.state.one("SELECT status FROM vod_items WHERE key='ep:9101'")["status"] == "queued"
+        assert pages["/vod/series/501"].count("<details class='card season'") == 2 and "data-vod-dl='ep:9001'" in pages["/vod/series/501"]
         resp = await client.post("/vod/item", data={"key": "movie:101", "action": "pause"})
         assert app.state.one("SELECT status FROM vod_items WHERE key='movie:101'")["status"] == "paused"
         dl = (await client.get("/vod/downloads")).text + (await client.get("/api/state")).text
@@ -417,10 +422,11 @@ async def test_play_now_streams_once_keeps_copy_and_ends(tmp_path, panel):
         target = tmp_path / "IPTV Movies" / "Ong Bak 3 (2010) {tmdb-43209}" / "Ong Bak 3 (2010) {tmdb-43209}.mkv"
         assert target.read_bytes() == MEDIA  # watched to the end: kept, byte-identical
         assert app.state.one("SELECT status FROM vod_items WHERE key='movie:101'")["status"] == "done"
-        # playing it again comes from the library: no panel request
+        # playing it again comes from the library: no panel request, and no connection slot
         async with httpx.AsyncClient(timeout=None) as c:
             async with c.stream("GET", f"{base}/auto/v900") as resp:
                 first = await resp.aiter_raw().__anext__()
+                assert app.connections.in_use("iptv") == 0
         assert _ts(first) and len(panel.downloads) == before + 1
     finally:
         server.should_exit = True
@@ -429,13 +435,14 @@ async def test_play_now_streams_once_keeps_copy_and_ends(tmp_path, panel):
 
 
 @needs_ffmpeg
-async def test_play_now_switches_title_and_keeps_partial_copy(tmp_path, panel):
+async def test_play_now_switches_title_and_keeps_partial_copy(tmp_path):
+    panel = FakePanel(LONG_MEDIA)  # longer than the 3 s start-up burst, so it is still playing at the switch
     app = await make_app(tmp_path, panel, play_channel={"save": True})
     server, task, base = await _serve(app)
     try:
         await app.vod.refresh_catalog()
         await app.vod.request_movie(105)  # a queued download
-        panel.mode, panel.chunk_delay = "slow", 0.05
+        panel.mode, panel.chunk_delay = "slow", 0.02
         dl = asyncio.get_running_loop().create_task(app.vod.run_once(slot_timeout=1))
         while not app.vod.current or not app.vod.current.get("done"):
             await asyncio.sleep(0.02)
@@ -596,8 +603,12 @@ async def test_play_now_copies_nothing_by_default_and_is_paced(tmp_path, panel):
         await app.shutdown()
 
 
-def test_play_pipe_is_paced():
+def test_play_args_look_like_a_broadcast():
     from pitlane.vod.play import pipe_args
 
     args = pipe_args()
     assert args[args.index("-readrate") + 1] == "1" and args.index("-readrate") < args.index("-i")
+    assert args[args.index("-c:v") + 1] == "libx264" and "expr:gte(t,n_forced*2)" in args  # keyframe every 2 s
+    assert args[args.index("-c:a") + 1] == "aac" and args[args.index("-ac") + 1] == "2"
+    copy = pipe_args(reencode=False, vcodec="h264")
+    assert copy[copy.index("-c:v") + 1] == "copy" and "dump_extra=freq=keyframe" in copy[copy.index("-bsf:v") + 1]

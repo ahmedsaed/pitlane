@@ -317,6 +317,7 @@ class App:
             probe=lambda src: self.health.probe_source(src, preemptible=False),
             limiter=self.connections,
             open_vod=self._open_vod,
+            vod_is_local=lambda: bool(self.vod and self.vod.selection_is_local()),
         )
 
     async def free_provider(self, provider: str, seconds: float | None) -> dict[str, int]:

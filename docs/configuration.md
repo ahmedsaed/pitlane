@@ -141,6 +141,7 @@ vod:                                 # docs/vod.md: movies and shows from an xtr
     guide_number: 900
     name: Pitlane Cinema
     save: false                      # true: also keep what is watched (no extra requests); off by default, copies via Download
+    reencode: true                   # broadcast-like video (keyframe every 2 s) so Plex desktop apps start it; ~1 CPU core
 ```
 
 ### Notifications (OPS-7)

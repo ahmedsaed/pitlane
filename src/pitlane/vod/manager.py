@@ -379,7 +379,7 @@ class VodManager:
         label = f"{m['title']} ({m['year']})" if m["year"] else m["title"]
         target = self.root("movie") / movie_relpath(m["title"], m["year"], m["tmdb"], m["ext"])
         return self._select({"key": f"movie:{vod_id}", "kind": "movie", "panel_id": str(vod_id), "ext": m["ext"],
-                             "title": label, "target": str(target), "expected": m["size"]})  # fmt: skip
+                             "title": label, "target": str(target), "expected": m["size"], "vcodec": m["vcodec"]})  # fmt: skip
 
     async def play_episode(self, series_id: int, episode_id: str) -> dict[str, Any]:
         s = await self.series(series_id)
@@ -392,6 +392,7 @@ class VodManager:
                         "key": f"ep:{e['id']}", "kind": "episode", "panel_id": e["id"], "ext": e["ext"],
                         "title": f"{s['title']} S{e['season']:02d}E{e['episode']:02d}", "target": str(target),
                         "expected": e["size"], "series_id": series_id, "season": e["season"], "episode": e["episode"],
+                        "vcodec": e["vcodec"],
                     })  # fmt: skip
         raise ProviderError(f"episode {episode_id} is not on the panel")
 
@@ -408,6 +409,14 @@ class VodManager:
         log.info("play now", extra={"title": sel["title"], "switched": switched})
         return {**sel, "switched": switched}
 
+    def selection_is_local(self) -> bool:
+        """The picked title is downloaded, so it plays from disk (no panel connection)."""
+        sel = self.selection()
+        if sel is None:
+            return False
+        row = self.state.one("SELECT status FROM vod_items WHERE key=?", (sel["key"],))
+        return bool(row and row["status"] == "done" and Path(sel["target"]).exists())
+
     def playing(self) -> dict[str, Any] | None:
         from ..config import PLAY_CHANNEL_ID
 
@@ -420,29 +429,36 @@ class VodManager:
 
     async def open_play(self, tracker: Any) -> Any:
         """The relay input for the play channel (unstarted)."""
-        from ..providers.base import OpenedInput
-        from ..relay import FfmpegInput, InputError, build_ffmpeg_args
+        from ..relay import FfmpegInput, InputError
         from .play import LocalFileInput, PlayInput, can_pipe
 
         sel = self.selection()
         if sel is None:
             raise InputError("nothing picked: use Play now in Pitlane first")
         target = Path(sel["target"])
-        row = self.state.one("SELECT status FROM vod_items WHERE key=?", (sel["key"],))
-        if row and row["status"] == "done" and target.exists():
+        if self.selection_is_local():
             log.info("play now: from the library", extra={"title": sel["title"]})
-            return LocalFileInput.for_path(target, tracker)
+            return LocalFileInput.for_path(target, tracker, self.cfg.play_channel.reencode, sel.get("vcodec") or "h264")
         provider = self.provider
         url = provider.movie_url(int(sel["panel_id"]), sel["ext"]) if sel["kind"] == "movie" else provider.episode_url(sel["panel_id"], sel["ext"])
         if not can_pipe(sel["ext"]):
             # MP4 may keep its index at the end: ffmpeg reads the URL itself (with seeks); no copy is kept.
-            return FfmpegInput(build_ffmpeg_args("ts", OpenedInput(url, dict(provider.headers), ["-re"])), tracker)
+            from .play import play_args
+
+            args = play_args(url, self.cfg.play_channel.reencode, sel.get("vcodec"))
+            ua = provider.headers.get("User-Agent")
+            if ua:
+                args[args.index("-i"):args.index("-i")] = ["-user_agent", ua]
+            return FfmpegInput(args, tracker)
         save = self.cfg.play_channel is not None and self.cfg.play_channel.save
         if save:
             self._queue(sel["key"], sel["kind"], sel["panel_id"], sel["title"], sel["ext"], target, sel.get("expected"),
                         sel.get("series_id"), sel.get("season"), sel.get("episode"), status="paused", note="saving while watching")  # fmt: skip
         item = self.state.one("SELECT * FROM vod_items WHERE key=?", (sel["key"],)) or {"key": sel["key"], "target": str(target)}
-        return PlayInput(self, item, url, dict(provider.headers), tracker, target if save else None)
+        from .play import pipe_args
+
+        args = pipe_args(self.cfg.play_channel.reencode, sel.get("vcodec") or "h264")
+        return PlayInput(self, item, url, dict(provider.headers), tracker, target if save else None, args)
 
     def keep_watched(self, item: dict[str, Any], watch: Path | None, received: int, total: int | None, complete: bool) -> None:
         """After playback: a complete copy goes into the library, a partial one replaces a shorter ``.part``."""

@@ -42,7 +42,7 @@ nav.tabs a.on{background:var(--soft);color:var(--fg)}nav.tabs a:hover{color:var(
 .dot.offline,.dot.failed,.dot.unmatched{background:var(--bad)}.dot.running{animation:pulse 1.4s infinite}
 @keyframes pulse{50%{opacity:.35}}
 main{max-width:1240px;margin:auto;padding:16px}
-section.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin:0 0 16px;box-shadow:var(--shadow)}
+section.card,details.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin:0 0 16px;box-shadow:var(--shadow)}
 section.card>h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 section.card>h2 .sub{font-weight:400;color:var(--muted);font-size:13px}
 .scroll{overflow-x:auto}table{border-collapse:collapse;width:100%}
@@ -81,13 +81,17 @@ form.inline{display:inline}.row{display:flex;gap:8px;align-items:center;flex-wra
 form.search{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}form.search input[type=search]{flex:1;min-width:200px}
 .pager{display:flex;gap:12px;justify-content:center;margin-top:16px}
 details>summary{cursor:pointer;color:var(--muted)}
+details.season>summary{display:flex;gap:10px;align-items:baseline;font-size:15px;color:var(--fg);list-style:none;padding:2px 0}
+details.season>summary::before{content:"▸";color:var(--muted);transition:transform .15s}details.season[open]>summary::before{transform:rotate(90deg)}
+details.season>summary::-webkit-details-marker{display:none}details.season .sub{color:var(--muted);font-size:13px}
+.card.season{display:block}
 .chans{display:flex;flex-direction:column}details.chan{border-bottom:1px solid var(--line)}details.chan:last-child{border-bottom:0}
 details.chan>summary{display:grid;grid-template-columns:44px minmax(120px,1.2fr) 2fr 110px;gap:10px;align-items:center;padding:9px 4px;color:var(--fg);list-style:none}
 details.chan>summary::-webkit-details-marker{display:none}details.chan>summary:hover{background:var(--soft);border-radius:6px}
 details.chan[open]>summary{font-weight:500}details.chan .dots{display:flex;gap:4px;justify-content:flex-end}
 details.chan>.scroll{padding:0 4px 10px 54px}
 @media (max-width:640px){details.chan>summary{grid-template-columns:36px 1fr auto}details.chan .src{display:none}details.chan>.scroll{padding-left:0}}
-@media (max-width:640px){header.top{position:static}.chips{margin-left:0}.detail .poster{width:140px}main{padding:12px}section.card{padding:12px}}
+@media (max-width:640px){header.top{position:static}.chips{margin-left:0}.detail .poster{width:140px}main{padding:12px}section.card,details.card{padding:12px}}
 """
 
 JS = r"""
@@ -195,8 +199,9 @@ JS = r"""
   };
   R.vodBadges = () => { const by = new Map(S.vod.items.map(it => [it.key, it]));
     for (const el of $$('[data-vod-badge]')) { const it = by.get(el.dataset.vodBadge), active = it && !['cancelled','deleted','failed'].includes(it.status);
-      el.innerHTML = it && it.status !== 'deleted' ? `<span class="badge"><span class="dot ${esc(it.status)}"></span>${esc(statusText(it))}${it.status === 'running' ? ' ' + pct((S.vod.current || {}).done || it.done, it.total || it.expected) + '%' : ''}</span>` : '';
-      const box = $(`[data-vod-check="${el.dataset.vodBadge}"]`); if (box) { box.disabled = !!active; if (active) box.checked = false; } }
+      el.innerHTML = it && !['deleted', 'cancelled'].includes(it.status) ? `<span class="badge"><span class="dot ${esc(it.status)}"></span>${esc(statusText(it))}${it.status === 'running' ? ' ' + pct((S.vod.current || {}).done || it.done, it.total || it.expected) + '%' : ''}</span>` : '';
+      const box = $(`[data-vod-check="${el.dataset.vodBadge}"]`); if (box) { box.disabled = !!active; if (active) box.checked = false; }
+      const dl = $(`[data-vod-dl="${el.dataset.vodBadge}"]`); if (dl) dl.hidden = !!active || (it && it.status === 'done'); }
   };
 
   const render = () => {

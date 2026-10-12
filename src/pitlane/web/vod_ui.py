@@ -241,25 +241,29 @@ def vod_router(app: "App") -> APIRouter:
         out.append("</div></div></section>")
         play_gn = mgr().cfg.play_channel.guide_number if mgr().cfg.play_channel else None
         out.append(f"<form method=post action='/vod/request/episodes' data-ajax data-after=clear><input type=hidden name=id value={series_id}><input type=hidden name=series value={series_id}>")
-        for season, eps in s["seasons"].items():
+        for i, (season, eps) in enumerate(s["seasons"].items()):
             total = sum(e["size"] or 0 for e in eps)
+            # Collapsible: the first season starts open (the only one, for most shows).
             out.append(
-                f"<section class=card><h2>Season {season} <span class=sub>{len(eps)} episodes · ≈ {fmt_size(total)}</span>"
-                f"<span style='margin-left:auto' class=row><button type=button data-check-all='{season}'>Select all</button>"
-                f"<button name=season value={season} class=primary>Download season {season}</button></span></h2>"
-                "<div class=scroll><table><tr><th style='width:28px'></th><th>#</th><th>Title</th><th>Length</th><th>Size</th><th>Quality</th><th></th>" + ("<th></th>" if play_gn else "") + "</tr>"
+                f"<details class='card season'{' open' if i == 0 else ''}><summary><b>Season {season}</b>"
+                f"<span class=sub>{len(eps)} episodes · ≈ {fmt_size(total)}</span></summary>"
+                f"<div class=row style='justify-content:flex-end;margin:4px 0 8px'><button type=button data-check-all='{season}'>Select all</button>"
+                f"<button name=season value={season} class=primary>⬇ Download season {season}</button></div>"
+                "<div class=scroll><table><tr><th style='width:28px'></th><th>#</th><th>Title</th><th>Length</th><th>Size</th><th>Quality</th><th></th><th></th></tr>"
             )
             for e in eps:
-                k = f"ep:{e['id']}"
+                k = escape(f"ep:{e['id']}", quote=True)
+                eid = escape(e["id"], quote=True)
                 q = _res(e["width"], e["height"])
+                play = f"<button formaction='/vod/play' name=episode value='{eid}' title='Play on channel {escape(play_gn)}'>▶ Play</button>" if play_gn else ""
                 out.append(
-                    f"<tr><td><input type=checkbox name=ep value='{escape(e['id'], quote=True)}' data-season='{season}' data-vod-check='{escape(k, quote=True)}'></td>"
+                    f"<tr><td><input type=checkbox name=ep value='{eid}' data-season='{season}' data-vod-check='{k}'></td>"
                     f"<td class=muted>{e['episode']}</td><td>{escape(e['title'])}</td><td class=muted>{fmt_duration(e['duration_s'])}</td>"
-                    f"<td class=muted>{fmt_size(e['size'])}</td><td class=muted>{q}</td><td><span data-vod-badge='{escape(k, quote=True)}'></span></td>"
-                    + (f"<td><button formaction='/vod/play' name=episode value='{escape(e['id'], quote=True)}' title='Play on channel {escape(play_gn)}'>▶ Play</button></td>" if play_gn else "")
-                    + "</tr>"
+                    f"<td class=muted>{fmt_size(e['size'])}</td><td class=muted>{q}</td><td><span data-vod-badge='{k}'></span></td>"
+                    f"<td class=row style='justify-content:flex-end;flex-wrap:nowrap'>{play}"
+                    f"<button name=only value='{eid}' data-vod-dl='{k}' title='Download this episode to Plex'>⬇ Download</button></td></tr>"
                 )
-            out.append("</table></div></section>")
+            out.append("</table></div></details>")
         if s["seasons"]:
             whole = fmt_size(sum(e["size"] or 0 for v in s["seasons"].values() for e in v))
             out.append(
@@ -280,7 +284,9 @@ def vod_router(app: "App") -> APIRouter:
         back = f"/vod/series/{sid}"
         try:
             s = await mgr().series(sid)
-            if f.get("all"):
+            if f.get("only"):
+                ids = f["only"][:1]
+            elif f.get("all"):
                 ids = [e["id"] for eps in s["seasons"].values() for e in eps]
             elif f.get("season"):
                 ids = [e["id"] for e in s["seasons"].get(int(f["season"][0]), [])]

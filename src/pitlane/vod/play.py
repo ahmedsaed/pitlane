@@ -23,8 +23,8 @@ from typing import TYPE_CHECKING, Any
 import httpx
 
 from ..logging import get_logger
-from ..providers.base import OpenedInput, describe_non_media, looks_like_page
-from ..relay import CHUNK, FfmpegInput, InputError, ProcessTracker, build_ffmpeg_args, ffmpeg_binary
+from ..providers.base import describe_non_media, looks_like_page
+from ..relay import CHUNK, FfmpegInput, InputError, ProcessTracker, ffmpeg_binary
 
 if TYPE_CHECKING:
     from .manager import VodManager
@@ -34,19 +34,47 @@ log = get_logger("vod.play")
 PIPE_FORMATS = {"mkv", "webm", "ts", "avi", "flv", "mpg", "mpeg"}
 
 
-# Real-time pacing like a broadcast channel, after a short start-up burst. Without it the
-# panel's opening burst (~40 s of video in under a second) reaches Plex at once, and
-# Plex's Live TV path for apps that use HTTP playback fails on it ("Error parsing AAC
-# extradata", "Recording failed") [verified 2026-10-12, PMS 1.43.4]; browsers (DASH) cope.
+# Plex's Live TV path for desktop apps (HTTP, direct-stream audio, Matroska) starts reading
+# at the newest 1 s segment and gives up if it cannot learn the stream's parameters within
+# ~1.7 s [verified 2026-10-12, PMS 1.43.4 + Plex for Linux]. Broadcast channels have a
+# keyframe every 1-2 s and repeat their codec headers; downloaded films often have one every
+# ~10 s and AAC headers that only make sense in a file. So the play channel is made to look
+# like a broadcast:
+# - paced at playback speed after a 3 s start-up burst (the panel's opening burst of ~40 s of
+#   video otherwise reaches Plex at once);
+# - video re-encoded (x264 veryfast, keyframe every 2 s; about one CPU core for 1080p);
+# - audio re-encoded to plain stereo AAC-LC.
+# ``reencode: false`` copies video instead (parameter sets repeated at keyframes): no CPU
+# cost, but Plex desktop apps then fail to start ("dimensions not set").
 PACE = ["-readrate", "1", "-readrate_initial_burst", "3"]
+AUDIO = ["-c:a", "aac", "-ac", "2", "-b:a", "192k"]
+VIDEO_X264 = [
+    "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-maxrate", "8M", "-bufsize", "16M", "-pix_fmt", "yuv420p",
+    "-force_key_frames", "expr:gte(t,n_forced*2)", "-sc_threshold", "0",
+]  # fmt: skip
+VIDEO_BSF = {
+    "h264": "h264_mp4toannexb,dump_extra=freq=keyframe",
+    "hevc": "hevc_mp4toannexb,dump_extra=freq=keyframe",
+}
 
 
-def pipe_args() -> list[str]:
+def video_args(reencode: bool, vcodec: str | None) -> list[str]:
+    if reencode:
+        return VIDEO_X264
+    bsf = VIDEO_BSF.get((vcodec or "").lower().replace("h265", "hevc"))
+    return ["-c:v", "copy", *(["-bsf:v", bsf] if bsf else [])]
+
+
+def play_args(src: str, reencode: bool = True, vcodec: str | None = None) -> list[str]:
     return [
-        ffmpeg_binary(), "-hide_banner", "-loglevel", "warning", *PACE, "-i", "pipe:0",
-        "-map", "0:v:0?", "-map", "0:a?", "-c", "copy",
+        ffmpeg_binary(), "-hide_banner", "-loglevel", "warning", *PACE, "-i", src,
+        "-map", "0:v:0?", "-map", "0:a:0?", *video_args(reencode, vcodec), *AUDIO,
         "-f", "mpegts", "-mpegts_flags", "+resend_headers", "-muxdelay", "0", "pipe:1",
     ]  # fmt: skip
+
+
+def pipe_args(reencode: bool = True, vcodec: str | None = None) -> list[str]:
+    return play_args("pipe:0", reencode, vcodec)
 
 
 class _PipedFfmpeg(FfmpegInput):
@@ -69,14 +97,14 @@ class PlayInput:
     """Relay input for the play channel: same interface as FfmpegInput."""
 
     def __init__(self, mgr: "VodManager", item: dict[str, Any], url: str, headers: dict[str, str],
-                 tracker: ProcessTracker | None, save_to: Path | None) -> None:  # fmt: skip
+                 tracker: ProcessTracker | None, save_to: Path | None, args: list[str] | None = None) -> None:  # fmt: skip
         self.mgr = mgr
         self.item = item
         self.url = url
         self.headers = headers
         self.tracker = tracker
         self.save_to = save_to  # final library path, or None
-        self.ff = _PipedFfmpeg(pipe_args(), tracker)
+        self.ff = _PipedFfmpeg(args or pipe_args(), tracker)
         self.stderr_tail: deque[str] = deque(maxlen=5)
         self._cm: Any = None
         self._resp: httpx.Response | None = None
@@ -179,8 +207,8 @@ class LocalFileInput(FfmpegInput):
     """A title already in the library: played from disk at real time (no panel request)."""
 
     @classmethod
-    def for_path(cls, path: Path, tracker: ProcessTracker | None) -> "LocalFileInput":
-        return cls(build_ffmpeg_args("file", OpenedInput(str(path))), tracker)
+    def for_path(cls, path: Path, tracker: ProcessTracker | None, reencode: bool = True, vcodec: str | None = None) -> "LocalFileInput":
+        return cls(play_args(str(path), reencode, vcodec), tracker)
 
 
 def can_pipe(ext: str) -> bool:
