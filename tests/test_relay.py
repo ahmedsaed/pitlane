@@ -430,7 +430,7 @@ async def test_limited_provider_not_probed_while_streaming(limited_harness):
             # the dashboard shows the provider's connections next to the tuners
             st = (await c.get("/api/status")).json()
             assert st["connections"] == {"mine": {"in_use": 1, "limit": 1}}
-            assert "mine connections 1/1" in (await c.get("/")).text
+            assert (await c.get("/api/state")).json()["connections"] == {"mine": {"in_use": 1, "limit": 1}}
 
 
 @needs_ffmpeg

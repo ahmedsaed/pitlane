@@ -1,39 +1,31 @@
 """Movies & Shows pages (VOD-2, docs/vod.md §5.7).
 
 Browsing reads the local catalogue only. Opening a title fetches its details
-once (VOD-3). Stream URLs carry the panel credentials and are never rendered.
+once (VOD-3). Download state on every page is rendered live from the state
+feed (web/shell.py). Stream URLs carry the panel credentials and are never
+rendered.
 """
 
 from __future__ import annotations
 
+from datetime import datetime
 from html import escape
 from typing import TYPE_CHECKING, Any
-from urllib.parse import parse_qs, quote, urlencode, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, Response
 
 from ..providers.base import ProviderError
 from ..vod import catalog
 from ..vod.manager import fmt_duration, fmt_size
-from .ui import CSS, _check_auth, _same_origin
+from .shell import done, page
+from .ui import _check_auth, _same_origin
 
 if TYPE_CHECKING:
     from ..app import App
 
 PAGE = 48
-VOD_CSS = """
-nav.tabs{display:flex;gap:14px;align-items:center}nav.tabs a{color:var(--fg)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
-.card{display:block;color:inherit;text-decoration:none;background:var(--bg);border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.card .img{aspect-ratio:2/3;background:var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;text-align:center;padding:6px}
-.card img{width:100%;height:100%;object-fit:cover;display:block}.card .t{padding:6px 8px;font-size:13px}
-.badge{display:inline-block;font-size:11px;padding:0 6px;border-radius:9px;border:1px solid var(--line);color:var(--muted);margin-right:4px}
-.badge.cam{color:var(--bad);border-color:var(--bad)}.detail{display:flex;gap:16px;flex-wrap:wrap}.detail img{width:200px;border-radius:8px}
-.detail .info{flex:1;min-width:260px}.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;min-width:80px}
-.bar>div{height:100%;background:var(--accent)}form.search{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
-form.search input[type=search]{flex:1;min-width:180px;padding:4px 8px}.pager{display:flex;gap:12px;margin-top:12px}
-"""
 
 
 def vod_router(app: "App") -> APIRouter:
@@ -52,22 +44,8 @@ def vod_router(app: "App") -> APIRouter:
         """Artwork from image hosts only: never from the panel itself (it would count as panel traffic)."""
         if not url or urlparse(url).scheme not in ("http", "https") or urlparse(url).hostname == panel_host():
             return f"<div class=img>{escape(alt)}</div>"
-        return f"<div class=img><img loading=lazy referrerpolicy=no-referrer src='{escape(url, quote=True)}' alt=''></div>"
-
-    def shell(title: str, body: str, request: Request, refresh: int | None = None) -> HTMLResponse:
-        msg = request.query_params.get("msg")
-        head = f"<meta http-equiv=refresh content={refresh}>" if refresh else ""
-        return HTMLResponse(
-            f"<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>{head}"
-            f"<title>{escape(title)} · Pitlane</title><style>{CSS}{VOD_CSS}</style></head><body>"
-            f"<header><h1>Pitlane · {escape(title)}</h1><nav class=tabs><a href='/'>Dashboard</a><a href='/vod'>Movies &amp; Shows</a>"
-            f"<a href='/vod/downloads'>Downloads</a></nav><span class=muted>{escape(mgr().summary())}</span></header>"
-            + (f"<div class=note>{escape(msg)}</div>" if msg else "")
-            + f"<main>{body}</main></body></html>"
-        )
-
-    def back(path: str, msg: str) -> RedirectResponse:
-        return RedirectResponse(f"{path}{'&' if '?' in path else '?'}msg={quote(msg)}", status_code=303)
+        # The title sits behind the image and shows if the image fails to load.
+        return f"<div class=img><span>{escape(alt)}</span><img loading=lazy referrerpolicy=no-referrer src='{escape(url, quote=True)}' alt='' onerror='this.remove()'></div>"
 
     async def form(request: Request) -> dict[str, list[str]]:
         return parse_qs((await request.body()).decode())
@@ -81,11 +59,8 @@ def vod_router(app: "App") -> APIRouter:
             return Response(status_code=403)
         return None
 
-    def status_badge(key: str) -> str:
-        row = app.state.one("SELECT status, bytes_done, total_size, expected_size FROM vod_items WHERE key=?", (key,))
-        if not row or row["status"] in ("cancelled", "deleted"):
-            return ""
-        return f"<span class=badge>{escape(row['status'])}</span>"
+    def facts(*items: str) -> str:
+        return "<div class=facts>" + "".join(f"<span class=badge>{escape(i)}</span>" for i in items if i) + "</div>"
 
     # ------------------------------------------------------------------ browse
     @r.get("/vod", response_class=HTMLResponse)
@@ -95,43 +70,53 @@ def vod_router(app: "App") -> APIRouter:
         q = request.query_params.get("q", "")
         kind = request.query_params.get("kind", "")
         cat = request.query_params.get("cat", "")
-        page = max(0, int(request.query_params.get("page", "0") or 0))
+        page_no = max(0, int(request.query_params.get("page", "0") or 0))
         cats = catalog.categories(app.state)
-        rows = catalog.search(app.state, q, kind or None, cat or None, mgr().cfg.show_adult, limit=PAGE, offset=page * PAGE)
+        rows = catalog.search(app.state, q, kind or None, cat or None, mgr().cfg.show_adult, limit=PAGE, offset=page_no * PAGE)
         age = catalog.catalog_age(app.state)
-        out = ["<section><form class=search method=get action='/vod'>"]
-        out.append(f"<input type=search name=q value='{escape(q, quote=True)}' placeholder='Search movies and shows' autofocus>")
-        out.append("<select name=kind>" + "".join(
-            f"<option value='{v}'{' selected' if v == kind else ''}>{label}</option>" for v, label in (("", "All"), ("movie", "Movies"), ("series", "Shows"))
+        out = ["<section class=card><form class=search method=get action='/vod'>"]
+        out.append(f"<input type=search name=q value='{escape(q, quote=True)}' placeholder='Search {_count(app)}' autofocus>")
+        out.append("<select name=kind onchange='this.form.submit()'>" + "".join(
+            f"<option value='{v}'{' selected' if v == kind else ''}>{label}</option>" for v, label in (("", "Movies and shows"), ("movie", "Movies"), ("series", "Shows"))
         ) + "</select>")  # fmt: skip
         options = ["<option value=''>All categories</option>"]
         for k, label in (("movie", "Movies"), ("series", "Shows")):
+            if kind and kind != k:
+                continue
             options.append(f"<optgroup label='{label}'>" + "".join(
                 f"<option{' selected' if c == cat else ''}>{escape(c)}</option>" for c in cats[k] if c
             ) + "</optgroup>")  # fmt: skip
-        out.append(f"<select name=cat>{''.join(options)}</select><button>Search</button></form>")
+        out.append(f"<select name=cat onchange='this.form.submit()'>{''.join(options)}</select><button class=primary>Search</button></form>")
         if age is None:
-            out.append("<p class=muted>The catalogue has not been downloaded yet.</p>")
-        if not rows:
-            out.append("<p class=muted>Nothing found.</p>")
+            out.append("<div class=empty>The catalogue has not been downloaded yet.</div>")
+        elif not rows:
+            out.append("<div class=empty>Nothing found.</div>")
         out.append("<div class=grid>")
         for row in rows:
-            href = f"/vod/{'movie' if row['kind'] == 'movie' else 'series'}/{row['id']}"
-            key = f"movie:{row['id']}" if row["kind"] == "movie" else None
-            badges = ("<span class='badge cam'>CAM</span>" if row.get("cam") else "") + (status_badge(key) if key else "")
-            badges += "" if row["kind"] == "movie" else "<span class=badge>show</span>"
-            year = f" ({row['year']})" if row.get("year") else ""
-            out.append(f"<a class=card href='{href}'>{img(row.get('poster'), row['name'])}<div class=t>{escape(row['name'])}{escape(year) if year not in row['name'] else ''}<br>{badges}<span class=muted>{escape(row.get('category') or '')}</span></div></a>")
+            is_movie = row["kind"] == "movie"
+            href = f"/vod/{'movie' if is_movie else 'series'}/{row['id']}"
+            year = f" ({row['year']})" if row.get("year") and str(row["year"]) not in row["name"] else ""
+            badges = "<span class='badge cam'>CAM</span> " if row.get("cam") else ""
+            badges += "" if is_movie else "<span class=badge>Show</span> "
+            live = f"<span data-vod-badge='movie:{row['id']}'></span>" if is_movie else ""
+            out.append(
+                f"<a class=card-t href='{href}' data-alt='{escape(row['name'], quote=True)}'>{img(row.get('poster'), row['name'])}"
+                f"<div class=t><div class=name>{escape(row['name'])}{escape(year)}</div><div class='muted small'>{escape(row.get('category') or '')}</div>"
+                f"<div class=row style='margin-top:4px'>{badges}{live}</div></div></a>"
+            )
         out.append("</div><div class=pager>")
         params = {"q": q, "kind": kind, "cat": cat}
-        if page:
-            out.append(f"<a href='/vod?{urlencode({**params, 'page': page - 1})}'>← Newer</a>")
+        if page_no:
+            out.append(f"<a class=btn href='/vod?{urlencode({**params, 'page': page_no - 1})}'>← Newer</a>")
         if len(rows) == PAGE:
-            out.append(f"<a href='/vod?{urlencode({**params, 'page': page + 1})}'>Older →</a>")
-        out.append("</div>")
-        when = f"updated {int(age // 3600)} h ago" if age is not None else "never updated"
-        out.append(f"<p class=muted>Catalogue {when}. <form class=inline method=post action='/vod/refresh'><button>Refresh now</button></form> (4 requests to the panel)</p></section>")
-        return shell("Movies & Shows", "".join(out), request)
+            out.append(f"<a class=btn href='/vod?{urlencode({**params, 'page': page_no + 1})}'>Older →</a>")
+        out.append("</div></section>")
+        when = f"updated {_ago(age)}" if age is not None else "never downloaded"
+        out.append(
+            f"<div class='muted small row'>Catalogue {when}; it refreshes daily.<form class=inline method=post action='/vod/refresh' data-ajax data-after=reload>"
+            "<button title='4 requests to the panel'>Refresh now</button></form></div>"
+        )
+        return page(app, "Movies & Shows", "vod", "".join(out))
 
     @r.post("/vod/refresh")
     async def refresh(request: Request):
@@ -140,8 +125,8 @@ def vod_router(app: "App") -> APIRouter:
         try:
             stats = await mgr().refresh_catalog(force=True)
         except ProviderError as e:
-            return back("/vod", f"Refresh failed: {e}")
-        return back("/vod", f"Catalogue refreshed: {stats['movies']} movies, {stats['series']} shows")
+            return done(request, "/vod", f"Refresh failed: {e}", ok=False)
+        return done(request, "/vod", f"Catalogue refreshed: {stats['movies']:,} movies, {stats['series']:,} shows")
 
     # ------------------------------------------------------------------ movie
     @r.get("/vod/movie/{vod_id}", response_class=HTMLResponse)
@@ -151,31 +136,40 @@ def vod_router(app: "App") -> APIRouter:
         try:
             m = await mgr().movie(vod_id)
         except ProviderError as e:
-            return shell("Movie", f"<section><p class=offline>{escape(str(e))}</p></section>", request)
-        key = f"movie:{vod_id}"
-        item = app.state.one("SELECT * FROM vod_items WHERE key=?", (key,))
-        quality = " · ".join(x for x in (
-            f"{m['width']}×{m['height']}" if m["width"] else "", m["vcodec"] or "", m["acodec"] or "",
-            fmt_duration(m["duration_s"]), f"about {fmt_size(m['size'])}" if m["size"] else "size unknown",
-        ) if x)  # fmt: skip
-        out = [f"<section class=detail>{img(m['poster'], m['title'])}<div class=info>"]
-        out.append(f"<h2>{escape(m['title'])}{f' ({m['year']})' if m['year'] else ''}</h2>")
+            return page(app, "Movie", "vod", f"<section class=card><p class=err>{escape(str(e))}</p><a class=btn href='/vod'>← Back</a></section>")
+        quality = [
+            _res(m["width"], m["height"]),
+            (m["vcodec"] or "").upper(),
+            fmt_duration(m["duration_s"]),
+            f"≈ {fmt_size(m['size'])}" if m["size"] else "size unknown",
+            f"★ {m['rating']}" if m["rating"] else "",
+        ]
+        out = [f"<section class=card><div class=detail><div class=poster data-alt='{escape(m['title'], quote=True)}'>{img(m['poster'], m['title'])}</div><div class=info>"]
+        out.append(f"<h2>{escape(m['title'])}{f' <span class=muted>({m['year']})</span>' if m['year'] else ''}</h2>")
+        out.append(facts(*quality, m["genre"] or "", m["category"] or ""))
         if m["cam"]:
-            out.append("<p><span class='badge cam'>CAM</span> filmed in a cinema; poor quality</p>")
-        out.append(f"<p class=muted>{escape(m['genre'] or '')} · {escape(str(m['category'] or ''))}" + (f" · TMDB {escape(m['tmdb'])}" if m["tmdb"] else " · no TMDB ID: Plex matches by name and year") + "</p>")
-        out.append(f"<p>{escape(m['plot'] or '')}</p><p class=muted>{escape(m['cast'] or '')}</p><p>{escape(quality)}</p>")
-        if item and item["status"] not in ("cancelled", "deleted", "failed"):
-            out.append(f"<p>Status: <b>{escape(item['status'])}</b> · <a href='/vod/downloads'>Downloads</a></p>")
-        else:
-            out.append(f"<form method=post action='/vod/request/movie'><input type=hidden name=id value={vod_id}><button>Request</button></form>")
-        out.append("</div></section>")
+            out.append("<p><span class='badge cam'>CAM</span> <span class=small>Filmed in a cinema: poor picture and sound.</span></p>")
+        out.append(f"<p>{escape(m['plot'] or '')}</p>")
+        if m["cast"]:
+            out.append(f"<p class='muted small'>{escape(m['cast'])}</p>")
+        out.append(
+            f"<p class='muted small'>{'Plex will match it exactly (TMDB ' + escape(m['tmdb']) + ').' if m['tmdb'] else 'No TMDB ID: Plex matches it by name and year.'}"
+            " Downloads run at about playback speed and only while no live channel is playing.</p>"
+        )
+        out.append(
+            f"<div data-vod-item='movie:{vod_id}' data-request-url='/vod/request/movie' data-request-id='{vod_id}'>"
+            f"<noscript><form method=post action='/vod/request/movie'><input type=hidden name=id value={vod_id}><button class=primary>Download to Plex</button></form></noscript></div>"
+        )
+        out.append("</div></div></section>")
         others = [v for v in catalog.versions(app.state, vod_id, mgr().cfg.show_adult) if v["id"] != vod_id]
         if others:
-            out.append("<section><h2>Other copies on the panel</h2><table><tr><th>Name</th><th>Category</th><th>Added</th><th></th></tr>")
+            out.append("<section class=card><h2>Other copies on the panel <span class=sub>open one to see its quality and size</span></h2><div class=scroll><table><tr><th>Name</th><th>Category</th><th>Added</th><th></th></tr>")
             for v in others:
-                out.append(f"<tr><td><a href='/vod/movie/{v['id']}'>{escape(v['name'])}</a> {'<span class=\"badge cam\">CAM</span>' if v['cam'] else ''}</td><td>{escape(v['category'] or '')}</td><td class=muted>{v['added'] or ''}</td><td>{status_badge('movie:' + str(v['id']))}</td></tr>")
-            out.append("</table><p class=muted>Open a copy to see its resolution and size (one request each).</p></section>")
-        return shell(m["title"], "".join(out), request)
+                added = datetime.fromtimestamp(v["added"]).strftime("%d %b %Y") if v["added"] else ""
+                cam = "<span class='badge cam'>CAM</span>" if v["cam"] else ""
+                out.append(f"<tr><td><a href='/vod/movie/{v['id']}'>{escape(v['name'])}</a> {cam}</td><td class=muted>{escape(v['category'] or '')}</td><td class=muted>{added}</td><td><span data-vod-badge='movie:{v['id']}'></span></td></tr>")
+            out.append("</table></div></section>")
+        return page(app, m["title"], "vod", "".join(out))
 
     @r.post("/vod/request/movie")
     async def request_movie(request: Request):
@@ -186,8 +180,8 @@ def vod_router(app: "App") -> APIRouter:
         try:
             ok = await mgr().request_movie(vod_id)
         except ProviderError as e:
-            return back(f"/vod/movie/{vod_id}", f"Request failed: {e}")
-        return back(f"/vod/movie/{vod_id}", "Added to the download queue" if ok else "Already requested")
+            return done(request, f"/vod/movie/{vod_id}", f"Request failed: {e}", ok=False)
+        return done(request, f"/vod/movie/{vod_id}", "Added to the download queue" if ok else "Already in the queue")
 
     # ------------------------------------------------------------------ series
     @r.get("/vod/series/{series_id}", response_class=HTMLResponse)
@@ -197,40 +191,61 @@ def vod_router(app: "App") -> APIRouter:
         try:
             s = await mgr().series(series_id)
         except ProviderError as e:
-            return shell("Show", f"<section><p class=offline>{escape(str(e))}</p></section>", request)
+            return page(app, "Show", "vod", f"<section class=card><p class=err>{escape(str(e))}</p><a class=btn href='/vod'>← Back</a></section>")
         follow = app.state.one("SELECT * FROM vod_follows WHERE series_id=?", (series_id,))
-        items = {r["key"]: r for r in app.state.query("SELECT key, status FROM vod_items WHERE series_id=?", (series_id,))}
-        out = [f"<section class=detail>{img(s['poster'], s['title'])}<div class=info>"]
-        out.append(f"<h2>{escape(s['title'])}{f' ({s['year']})' if s['year'] else ''}</h2>")
-        out.append(f"<p class=muted>{escape(s['genre'] or '')} · {escape(str(s['category'] or ''))}</p><p>{escape(s['plot'] or '')}</p><p class=muted>{escape(s['cast'] or '')}</p>")
         seasons = list(s["seasons"])
+        n_eps = sum(len(v) for v in s["seasons"].values())
+        out = [f"<section class=card><div class=detail><div class=poster data-alt='{escape(s['title'], quote=True)}'>{img(s['poster'], s['title'])}</div><div class=info>"]
+        out.append(f"<h2>{escape(s['title'])}{f' <span class=muted>({s['year']})</span>' if s['year'] else ''}</h2>")
+        out.append(facts(f"{len(seasons)} season{'s' if len(seasons) != 1 else ''}", f"{n_eps} episodes", f"★ {s['rating']}" if s["rating"] else "", s["genre"] or "", s["category"] or ""))
+        out.append(f"<p>{escape(s['plot'] or '')}</p>")
+        if s["cast"]:
+            out.append(f"<p class='muted small'>{escape(s['cast'])}</p>")
         if follow:
-            out.append(f"<form method=post action='/vod/follow'><input type=hidden name=id value={series_id}><input type=hidden name=off value=1>"
-                       f"Following: new episodes from season {follow['from_season']} are requested automatically. <button>Stop following</button></form>")  # fmt: skip
+            out.append(
+                f"<form class=row method=post action='/vod/follow' data-ajax data-after=reload><input type=hidden name=id value={series_id}><input type=hidden name=off value=1>"
+                f"<span class=badge><span class='dot online'></span>Following</span><span class=small>New episodes from season {follow['from_season']} download automatically.</span><button>Stop following</button></form>"
+            )
         elif seasons:
             opts = "".join(f"<option{' selected' if n == seasons[-1] else ''}>{n}</option>" for n in seasons)
-            out.append(f"<form method=post action='/vod/follow'><input type=hidden name=id value={series_id}>Follow new episodes from season <select name=from_season>{opts}</select> <button>Follow</button></form>")
-        out.append(f"<form method=post action='/vod/series-tmdb'><input type=hidden name=id value={series_id}>TMDB ID for Plex matching: "
-                   f"<input name=tmdb size=8 value='{escape(s['tmdb'] or '', quote=True)}' placeholder='optional'> <button>Save</button></form>")  # fmt: skip
-        out.append("</div></section>")
-        out.append(f"<form method=post action='/vod/request/episodes'><input type=hidden name=id value={series_id}>")
+            out.append(
+                f"<form class=row method=post action='/vod/follow' data-ajax data-after=reload><input type=hidden name=id value={series_id}>"
+                f"<span class=small>Download new episodes automatically from season</span><select name=from_season>{opts}</select><button>Follow</button></form>"
+            )
+        out.append(
+            "<details style='margin-top:10px'><summary class=small>Plex matching</summary>"
+            f"<form class=row method=post action='/vod/series-tmdb' data-ajax style='margin-top:6px'><input type=hidden name=id value={series_id}>"
+            f"<span class=small>TMDB ID (if Plex picks the wrong show):</span><input name=tmdb size=9 value='{escape(s['tmdb'] or '', quote=True)}' placeholder='e.g. 247718'><button>Save</button></form></details>"
+        )
+        out.append("</div></div></section>")
+        out.append(f"<form method=post action='/vod/request/episodes' data-ajax data-after=clear><input type=hidden name=id value={series_id}>")
         for season, eps in s["seasons"].items():
             total = sum(e["size"] or 0 for e in eps)
-            out.append(f"<section><h2>Season {season} <span class=muted>({len(eps)} episodes, about {fmt_size(total)})</span> "
-                       f"<button name=season value={season}>Request season {season}</button></h2><table><tr><th></th><th>#</th><th>Title</th><th>Length</th><th>Size</th><th>Quality</th><th></th></tr>")  # fmt: skip
+            out.append(
+                f"<section class=card><h2>Season {season} <span class=sub>{len(eps)} episodes · ≈ {fmt_size(total)}</span>"
+                f"<span style='margin-left:auto' class=row><button type=button data-check-all='{season}'>Select all</button>"
+                f"<button name=season value={season} class=primary>Download season {season}</button></span></h2>"
+                "<div class=scroll><table><tr><th style='width:28px'></th><th>#</th><th>Title</th><th>Length</th><th>Size</th><th>Quality</th><th></th></tr>"
+            )
             for e in eps:
-                st = items.get(f"ep:{e['id']}")
-                taken = st is not None and st["status"] not in ("cancelled", "deleted", "failed")
-                box = "" if taken else f"<input type=checkbox name=ep value='{escape(e['id'], quote=True)}'>"
-                q = f"{e['width']}×{e['height']}" if e["width"] else ""
-                out.append(f"<tr><td>{box}</td><td>{e['episode']}</td><td>{escape(e['title'])}</td><td>{fmt_duration(e['duration_s'])}</td><td>{fmt_size(e['size'])}</td><td>{q}</td><td>{escape(st['status']) if taken else ''}</td></tr>")
-            out.append("</table></section>")
+                k = f"ep:{e['id']}"
+                q = _res(e["width"], e["height"])
+                out.append(
+                    f"<tr><td><input type=checkbox name=ep value='{escape(e['id'], quote=True)}' data-season='{season}' data-vod-check='{escape(k, quote=True)}'></td>"
+                    f"<td class=muted>{e['episode']}</td><td>{escape(e['title'])}</td><td class=muted>{fmt_duration(e['duration_s'])}</td>"
+                    f"<td class=muted>{fmt_size(e['size'])}</td><td class=muted>{q}</td><td><span data-vod-badge='{escape(k, quote=True)}'></span></td></tr>"
+                )
+            out.append("</table></div></section>")
         if s["seasons"]:
-            out.append("<p><button>Request selected episodes</button> <button name=all value=1>Request the whole show</button></p>")
+            whole = fmt_size(sum(e["size"] or 0 for v in s["seasons"].values() for e in v))
+            out.append(
+                "<div class=row style='justify-content:flex-end'><button>Download selected episodes</button>"
+                f"<button name=all value=1 data-confirm='Download all {n_eps} episodes (≈ {whole})?'>Download the whole show</button></div>"
+            )
         else:
-            out.append("<p class=muted>No episodes on the panel.</p>")
+            out.append("<section class=card><div class=empty>No episodes on the panel.</div></section>")
         out.append("</form>")
-        return shell(s["title"], "".join(out), request)
+        return page(app, s["title"], "vod", "".join(out))
 
     @r.post("/vod/request/episodes")
     async def request_episodes(request: Request):
@@ -238,6 +253,7 @@ def vod_router(app: "App") -> APIRouter:
             return err
         f = await form(request)
         sid = int(f.get("id", ["0"])[0])
+        back = f"/vod/series/{sid}"
         try:
             s = await mgr().series(sid)
             if f.get("all"):
@@ -246,10 +262,12 @@ def vod_router(app: "App") -> APIRouter:
                 ids = [e["id"] for e in s["seasons"].get(int(f["season"][0]), [])]
             else:
                 ids = f.get("ep", [])
+            if not ids:
+                return done(request, back, "Select some episodes first", ok=False)
             n = await mgr().request_episodes(sid, ids)
         except ProviderError as e:
-            return back(f"/vod/series/{sid}", f"Request failed: {e}")
-        return back(f"/vod/series/{sid}", f"{n} episode(s) added to the download queue" if n else "Nothing new to request")
+            return done(request, back, f"Request failed: {e}", ok=False)
+        return done(request, back, f"{n} episode{'s' if n != 1 else ''} added to the download queue" if n else "Those episodes are already in the queue")
 
     @r.post("/vod/follow")
     async def follow(request: Request):
@@ -259,12 +277,12 @@ def vod_router(app: "App") -> APIRouter:
         sid = int(f.get("id", ["0"])[0])
         if f.get("off"):
             mgr().unfollow(sid)
-            return back(f"/vod/series/{sid}", "No longer following")
+            return done(request, f"/vod/series/{sid}", "No longer following")
         try:
             await mgr().follow(sid, int(f.get("from_season", ["1"])[0]))
         except ProviderError as e:
-            return back(f"/vod/series/{sid}", f"Follow failed: {e}")
-        return back(f"/vod/series/{sid}", "Following: new episodes will be requested automatically")
+            return done(request, f"/vod/series/{sid}", f"Follow failed: {e}", ok=False)
+        return done(request, f"/vod/series/{sid}", "Following: new episodes will download automatically")
 
     @r.post("/vod/series-tmdb")
     async def series_tmdb(request: Request):
@@ -275,81 +293,57 @@ def vod_router(app: "App") -> APIRouter:
         try:
             mgr().set_series_tmdb(sid, f.get("tmdb", [""])[0])
         except ValueError as e:
-            return back(f"/vod/series/{sid}", str(e))
-        return back(f"/vod/series/{sid}", "Saved; applies to episodes requested from now on")
+            return done(request, f"/vod/series/{sid}", str(e), ok=False)
+        return done(request, f"/vod/series/{sid}", "Saved; applies to episodes requested from now on")
 
     # ------------------------------------------------------------------ downloads
     @r.get("/vod/downloads", response_class=HTMLResponse)
     async def downloads(request: Request):
         if err := guard(request):
             return err
-        m = mgr()
-        cfg = m.cfg
-        use = m.usage()
-        rows = app.state.query(
-            "SELECT * FROM vod_items WHERE status != 'deleted' ORDER BY CASE status WHEN 'running' THEN 0 WHEN 'queued' THEN 1 "
-            "WHEN 'paused' THEN 2 WHEN 'failed' THEN 3 ELSE 4 END, created_at DESC LIMIT 300"
+        await mgr().machine_id()  # for "Fix Match" links
+        body = (
+            "<section class=card><h2>Downloads</h2><div data-r=vodStatus><div class=empty>Loading…</div></div></section>"
+            "<section class=card hidden><h2>Needs a Fix Match in Plex <span class=sub>Plex could not identify these</span></h2><div data-r=vodUnmatched></div></section>"
+            "<section class=card><h2>Queue</h2><div data-r=vodQueue><div class=empty>Loading…</div></div>"
+            "<noscript><p class=muted>This page needs JavaScript.</p></noscript></section>"
         )
-        out = ["<section><h2>Status</h2><table>"]
-        cur = m.current
-        if cur:
-            pct = int(100 * (cur["done"] or 0) / cur["total"]) if cur.get("total") else 0
-            out.append(f"<tr><th>Downloading</th><td>{escape(cur['title'])} · {fmt_size(cur['done'])} of {fmt_size(cur.get('total'))} · {fmt_size(cur.get('rate'))}/s <div class=bar><div style='width:{pct}%'></div></div></td></tr>")
-        if m.blocked:
-            out.append(f"<tr><th>Waiting</th><td>{escape(m.blocked)}</td></tr>")
-        caps = lambda used, cap: fmt_size(used) + (f" of {cap:g} GB" if cap else "")  # noqa: E731
-        out.append(f"<tr><th>Data used</th><td>today {caps(use['day'], cfg.max_gb_per_day)} · this month {caps(use['month'], cfg.max_gb_per_month)}</td></tr>")
-        free = {k: m.free_space(k) for k in ("movie", "episode")}
-        out.append(f"<tr><th>Free space</th><td>movies {fmt_size(free['movie'])} · shows {fmt_size(free['episode'])} (keeps {fmt_size(cfg.min_free_space)} free)</td></tr>")
-        rng = app.state.get("vod.range_supported")
-        out.append("<tr><th>Resume</th><td>" + {"1": "the panel supports resuming downloads", "0": "the panel does not support resuming; a download paused for live TV restarts"}.get(rng or "", "not known yet (checked on the first resumed download)") + "</td></tr>")
-        out.append(f"<tr><th>Rules</th><td class=muted>window {escape(cfg.download_window or 'any time')} · speed {fmt_size(cfg.max_rate) + '/s' if cfg.max_rate else 'unlimited'} · pauses for live TV and around F1 sessions</td></tr></table></section>")
-        mid = await m.machine_id()
-        unmatched = [r for r in rows if r["match_state"] in ("unmatched", "not found")]
-        if unmatched:
-            out.append("<section><h2>Needs a Fix Match in Plex</h2><table>")
-            for row in unmatched:
-                link = (
-                    f"<a target=_blank rel=noopener href='https://app.plex.tv/desktop/#!/server/{escape(mid)}/details?key={quote('/library/metadata/' + row['plex_rating_key'], safe='')}'>Open in Plex</a>"
-                    if mid and row["plex_rating_key"] else "not in Plex yet"
-                )  # fmt: skip
-                out.append(f"<tr><td>{escape(row['title'])}</td><td>{escape(row['match_state'])}</td><td>{link}</td></tr>")
-            out.append("</table></section>")
-        out.append("<section><h2>Queue</h2>")
-        if not rows:
-            out.append("<p class=muted>Nothing requested yet. <a href='/vod'>Browse movies and shows</a>.</p>")
-        else:
-            out.append("<table><tr><th>Title</th><th>Status</th><th>Progress</th><th>Size</th><th>Plex</th><th>Note</th><th></th></tr>")
-            for row in rows:
-                total = row["total_size"] or row["expected_size"]
-                pct = int(100 * (row["bytes_done"] or 0) / total) if total else 0
-                pct = 100 if row["status"] == "done" else min(pct, 99)
-                actions = {
-                    "queued": ("pause", "cancel"), "running": ("pause", "cancel"), "paused": ("resume", "cancel"),
-                    "failed": ("retry", "cancel"), "cancelled": ("retry",), "done": (),
-                }.get(row["status"], ())  # fmt: skip
-                btns = "".join(
-                    f"<form class=inline method=post action='/vod/item'><input type=hidden name=key value='{escape(row['key'], quote=True)}'>"
-                    f"<button name=action value={a}>{a.title()}</button></form> "
-                    for a in actions
-                )
-                out.append(
-                    f"<tr><td>{escape(row['title'])}</td><td>{escape(row['status'])}</td><td><div class=bar><div style='width:{pct}%'></div></div></td>"
-                    f"<td>{fmt_size(total)}</td><td>{escape(row['match_state'] or '')}</td><td class=muted>{escape(row['last_error'] or '')}</td><td>{btns}</td></tr>"
-                )
-            out.append("</table>")
-        out.append("</section>")
-        return shell("Downloads", "".join(out), request, refresh=10 if cur else None)
+        return page(app, "Downloads", "downloads", body)
 
     @r.post("/vod/item")
     async def item_action(request: Request):
         if err := guard(request, post=True):
             return err
         f = await form(request)
+        action = f.get("action", [""])[0]
         try:
-            mgr().item_action(f.get("key", [""])[0], f.get("action", [""])[0])
+            mgr().item_action(f.get("key", [""])[0], action)
         except (KeyError, ValueError) as e:
-            return back("/vod/downloads", f"Not possible: {e}")
-        return back("/vod/downloads", "Done")
+            return done(request, "/vod/downloads", f"Not possible: {e}", ok=False)
+        verb = {"pause": "Paused", "resume": "Resumed", "retry": "Queued again", "cancel": "Cancelled"}.get(action, "Done")
+        return done(request, "/vod/downloads", verb)
 
     return r
+
+
+def _res(width: int | None, height: int | None) -> str:
+    """Name the resolution by width: a 1920×802 widescreen film is "1080p", not "802p"."""
+    if not width:
+        return f"{height}p" if height else ""
+    for w, name in ((3800, "4K"), (1900, "1080p"), (1260, "720p"), (700, "SD")):
+        if width >= w:
+            return name
+    return f"{width}×{height}"
+
+
+def _count(app: "App") -> str:
+    m = app.state.one("SELECT (SELECT COUNT(*) FROM vod_titles) AS m, (SELECT COUNT(*) FROM vod_series) AS s")
+    return f"{m['m']:,} movies and {m['s']:,} shows" if m and m["m"] else "movies and shows"
+
+
+def _ago(seconds: float) -> str:
+    if seconds < 3600:
+        return f"{int(seconds // 60)} min ago"
+    if seconds < 86400:
+        return f"{int(seconds // 3600)} h ago"
+    return f"{int(seconds // 86400)} days ago"

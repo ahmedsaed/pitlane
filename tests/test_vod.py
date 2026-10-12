@@ -347,16 +347,21 @@ async def test_pages_render_without_credentials(tmp_path, panel):
             pages[path] = resp.text
         assert "Ong Bak 3" in pages["/vod?q=ong"] and "img.example.invalid/ob3.jpg" in pages["/vod?q=ong"]
         assert f"{PANEL}/images" not in pages["/vod?q=ong"]  # no artwork from the panel host
-        assert "about 805.2 MB" in pages["/vod/movie/101"]
+        assert "≈ 805.2 MB" in pages["/vod/movie/101"] and "data-vod-item='movie:101'" in pages["/vod/movie/101"]
         assert "Season 2" in pages["/vod/series/501"]
         assert "Movies &amp; Shows" in pages["/"]
         resp = await client.post("/vod/request/movie", data={"id": "101"})
         assert resp.status_code == 303
+        resp = await client.post("/vod/request/movie", data={"id": "101"}, headers={"Accept": "application/json"})
+        assert resp.json() == {"ok": True, "msg": "Already in the queue"}
+        st = (await client.get("/api/state")).json()["vod"]
+        assert [i["key"] for i in st["items"]] == ["movie:101"] and st["items"][0]["status"] == "queued"
+        assert st["free"]["movie"] and st["queued"] == 1
         resp = await client.post("/vod/request/episodes", data={"id": "501", "season": "1"})
         assert resp.status_code == 303 and "2%20episode" in resp.headers["location"]
         resp = await client.post("/vod/item", data={"key": "movie:101", "action": "pause"})
         assert app.state.one("SELECT status FROM vod_items WHERE key='movie:101'")["status"] == "paused"
-        dl = (await client.get("/vod/downloads")).text
+        dl = (await client.get("/vod/downloads")).text + (await client.get("/api/state")).text
         for text in [*pages.values(), dl]:
             assert USER not in text and PASS not in text
         await client.aclose()

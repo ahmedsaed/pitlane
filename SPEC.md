@@ -87,7 +87,7 @@ Design: `docs/vod.md`.
 
 ### 2.6 Interface and operations (OPS)
 
-- **OPS-1** Pitlane MUST serve a small web UI with: channel and source health, current streams, guide preview, replay queue, `needs-review` items (with a manual "assign to session" action), and a "reload config" button.
+- **OPS-1** Pitlane MUST serve a small web UI with: channel and source health, current streams, guide preview, replay queue, `needs-review` items (with a manual "assign to session" action), and a "reload config" button. Status that changes (streams, source health, connections, replay and VOD queues, download progress) SHOULD update without reloading the page: `/api/state` returns one snapshot, and `/api/events` pushes it as Server-Sent Events whenever it changes. Actions post in the background; without JavaScript they still work as plain forms.
 - **OPS-2** Pitlane MUST expose `/healthz` (liveness) and `/metrics` (Prometheus text format).
 - **OPS-3** Configuration MUST be a single YAML file, validated on load. Invalid config MUST refuse to start and print the exact path and reason. Hot reload MUST keep the old config if the new one is invalid.
 - **OPS-4** Secrets (Plex token, provider credentials) MUST be accepted from environment variables or files and MUST NOT appear in logs, the UI, or `/metrics`.

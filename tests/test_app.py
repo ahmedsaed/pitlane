@@ -78,13 +78,39 @@ async def test_ui_requires_password_and_escapes(client):
     r = await client.get("/", headers=client.hdrs)
     assert r.status_code == 200
     html = r.text
-    assert "F1 Main Feed" in html and "Guide preview" in html and "Needs review" in html and "Reload config" in html
+    assert "F1 Main Feed" in html and "Coming up" in html and "Reload config" in html and "data-r=streams" in html
     assert "<script>alert(1)</script>" not in html and "&lt;script&gt;" in html
     assert "user:pw" not in html and SECRET not in html  # locators & secrets never shown
     # tuner endpoints stay open for PMS
     assert (await client.get("/discover.json")).status_code == 200
     st = (await client.get("/api/status", headers=client.hdrs)).json()
     assert st["channels"][0]["sources"][0]["state"] == "unknown"
+
+
+async def test_live_state_events_and_json_actions(client):
+    """The UI's live feed: /api/state, the SSE stream, and form posts answered with JSON."""
+    from pitlane.web.live import event_stream
+
+    assert (await client.get("/api/state")).status_code == 401
+    st = (await client.get("/api/state", headers=client.hdrs)).json()
+    assert st["tuners"]["count"] >= 1 and st["streams"] == [] and st["vod"] is None
+    assert all(set(v) == {"state", "latency_ms", "last_error"} for v in st["sources"].values())
+    assert "user:pw" not in str(st) and SECRET not in str(st)
+
+    calls = {"n": 0}
+
+    async def disconnected():
+        calls["n"] += 1
+        return calls["n"] > 3
+
+    events = [e async for e in event_stream(client.pl, disconnected, every=0.01, heartbeat=0.015)]
+    assert events[0].startswith("data: {") and events[0].endswith("\n\n")
+    assert all(e.startswith(": keep-alive") for e in events[1:])  # unchanged state is not resent
+
+    r = await client.post("/ui/refresh-calendar", headers={**client.hdrs, "Accept": "application/json"})
+    assert r.headers["content-type"].startswith("application/json") and "msg" in r.json()
+    r = await client.post("/ui/refresh-calendar", headers=client.hdrs, follow_redirects=False)
+    assert r.status_code == 303  # without the page script: plain redirect
 
 
 async def test_metrics_and_healthz(client):
