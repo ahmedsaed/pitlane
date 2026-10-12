@@ -135,10 +135,11 @@ The panel caps each stream at about 1.1× the title's bitrate [verified 2026-10-
 
 - **Pick:** "▶ Play on channel 900" on a movie or episode page stores the choice (`vod.play` in the state database). Tuning 900 in Plex Live TV starts it within seconds.
 - **One connection:** the channel's source belongs to the xtream provider, so it follows LIVE-10 like any live stream: it pauses a running download, and a second live tune waits for it.
-- **Pipe, not a second request:** Pitlane reads the panel's response once and feeds the bytes to ffmpeg (remux to MPEG-TS for Plex) and, with `save`, to `{target}.watch`. MP4 files may keep their index at the end, which a pipe cannot reach; they are played by ffmpeg from the URL and not saved.
+- **Pipe, not a second request:** Pitlane reads the panel's response once and feeds the bytes to ffmpeg (remux to MPEG-TS for Plex) and, with `save` (off by default; copies are made with Download), to `{target}.watch`.
+- **Paced like a channel:** ffmpeg reads at playback speed after a 3 s start-up burst (`-readrate 1 -readrate_initial_burst 3`). Unpaced, the panel's opening burst (about 40 s of video in under a second) reached Plex at once; Plex Web (DASH) coped, but Plex apps that use HTTP playback failed with "Recording failed" after "Error parsing AAC extradata" **[observed 2026-10-12, PMS 1.43.4]**. MP4 files may keep their index at the end, which a pipe cannot reach; they are played by ffmpeg from the URL and not saved.
 - **End:** when the title ends the stream ends; a stall ends it too (a title has no backup, and restarting from the top would be worse).
 - **Switch:** picking another title while 900 is playing closes the input and opens the new title on the same client stream.
-- **Keep:** watched to the end → moved into the library, item `done`, Plex scan and match check as for a download. Stopped early → the `.watch` file replaces a shorter `.part` and the item is `paused` ("partly saved"); Resume downloads the rest with a `Range` request. Nothing is downloaded that was not asked for.
+- **Keep (only with `save`):** watched to the end → moved into the library, item `done`, Plex scan and match check as for a download. Stopped early → the `.watch` file replaces a shorter `.part` and the item is `paused` ("partly saved"); Resume downloads the rest with a `Range` request. Nothing is downloaded that was not asked for.
 - **Already downloaded:** played from the library file (`-re`), no panel request.
 - **Limits of live playback:** Plex's Live TV buffer allows pause and rewind within what was played; skipping ahead and resume-from-position are not available. For those, download the title.
 
@@ -159,7 +160,7 @@ vod:
   delete_after_watched: null         # e.g. 14d
   dry_run_retention: true
   show_adult: false
-  play_channel: { guide_number: 900, name: Pitlane Cinema, save: true }   # null turns "Play now" off
+  play_channel: { guide_number: 900, name: Pitlane Cinema, save: false }   # null turns "Play now" off
 ```
 
 `docker-compose.yml` mounts `~/Media/IPTV Movies` and `~/Media/IPTV Shows` into both the Pitlane and the Plex containers at the same paths, like the F1 folders.

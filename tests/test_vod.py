@@ -397,7 +397,7 @@ def _ts(data: bytes) -> bool:
 
 @needs_ffmpeg
 async def test_play_now_streams_once_keeps_copy_and_ends(tmp_path, panel):
-    app = await make_app(tmp_path, panel)
+    app = await make_app(tmp_path, panel, play_channel={"save": True})
     server, task, base = await _serve(app)
     try:
         await app.vod.refresh_catalog()
@@ -430,7 +430,7 @@ async def test_play_now_streams_once_keeps_copy_and_ends(tmp_path, panel):
 
 @needs_ffmpeg
 async def test_play_now_switches_title_and_keeps_partial_copy(tmp_path, panel):
-    app = await make_app(tmp_path, panel)
+    app = await make_app(tmp_path, panel, play_channel={"save": True})
     server, task, base = await _serve(app)
     try:
         await app.vod.refresh_catalog()
@@ -568,3 +568,36 @@ async def test_free_connection_stops_stream_and_download(tmp_path, panel):
         server.should_exit = True
         await task
         await app.shutdown()
+
+
+@needs_ffmpeg
+async def test_play_now_copies_nothing_by_default_and_is_paced(tmp_path, panel):
+    import time
+
+    app = await make_app(tmp_path, panel)
+    server, task, base = await _serve(app)
+    try:
+        await app.vod.refresh_catalog()
+        async with httpx.AsyncClient(timeout=10) as c:
+            assert (await c.get(f"{base}/auto/v900")).status_code == 503  # nothing picked
+        assert all(s.state == "unknown" for s in app.channel_map.channel_sources("pitlane-cinema"))  # no stale error
+        await app.vod.play_movie(101)
+        t0 = time.monotonic()
+        async with httpx.AsyncClient(timeout=None) as c:
+            async with c.stream("GET", f"{base}/auto/v900") as resp:
+                data = b"".join([b async for b in resp.aiter_raw()])
+        assert _ts(data)
+        assert app.state.query("SELECT * FROM vod_items") == []  # no copy, no queue item
+        assert not list((tmp_path / "IPTV Movies").rglob("*"))
+        assert time.monotonic() - t0 < 10  # a 2 s title, inside its 3 s start-up burst
+    finally:
+        server.should_exit = True
+        await task
+        await app.shutdown()
+
+
+def test_play_pipe_is_paced():
+    from pitlane.vod.play import pipe_args
+
+    args = pipe_args()
+    assert args[args.index("-readrate") + 1] == "1" and args.index("-readrate") < args.index("-i")

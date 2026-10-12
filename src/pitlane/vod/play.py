@@ -34,9 +34,16 @@ log = get_logger("vod.play")
 PIPE_FORMATS = {"mkv", "webm", "ts", "avi", "flv", "mpg", "mpeg"}
 
 
+# Real-time pacing like a broadcast channel, after a short start-up burst. Without it the
+# panel's opening burst (~40 s of video in under a second) reaches Plex at once, and
+# Plex's Live TV path for apps that use HTTP playback fails on it ("Error parsing AAC
+# extradata", "Recording failed") [verified 2026-10-12, PMS 1.43.4]; browsers (DASH) cope.
+PACE = ["-readrate", "1", "-readrate_initial_burst", "3"]
+
+
 def pipe_args() -> list[str]:
     return [
-        ffmpeg_binary(), "-hide_banner", "-loglevel", "warning", "-i", "pipe:0",
+        ffmpeg_binary(), "-hide_banner", "-loglevel", "warning", *PACE, "-i", "pipe:0",
         "-map", "0:v:0?", "-map", "0:a?", "-c", "copy",
         "-f", "mpegts", "-mpegts_flags", "+resend_headers", "-muxdelay", "0", "pipe:1",
     ]  # fmt: skip

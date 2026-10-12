@@ -140,7 +140,7 @@ vod:                                 # docs/vod.md: movies and shows from an xtr
   play_channel:                      # "Play now" channel (VOD-11); null turns it off
     guide_number: 900
     name: Pitlane Cinema
-    save: true                       # keep what is watched (no extra requests)
+    save: false                      # true: also keep what is watched (no extra requests); off by default, copies via Download
 ```
 
 ### Notifications (OPS-7)

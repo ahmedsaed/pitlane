@@ -433,6 +433,9 @@ class StreamSession:
 
     async def _fail(self, src: Source, state: str, reason: str) -> None:
         await self._close_input(background=True)
+        if src.kind == "vod":  # the play channel's state is the picked title, not source health
+            log.warning("play channel could not start", extra={"channel": self.channel.id, "error": reason})
+            return
         self.hooks.mark_source(src, state, reason)
         self.hooks.reprobe(src)  # docs/tuner.md: reprobe immediately
 

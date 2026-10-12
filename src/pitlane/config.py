@@ -469,7 +469,7 @@ class PlayChannelCfg(Strict):
 
     guide_number: str = "900"
     name: str = "Pitlane Cinema"
-    save: bool = True  # keep a copy of what is watched (same bytes, no extra requests)
+    save: bool = False  # keep a copy of what is watched (same bytes, no extra requests); off: copies only via Download
 
     @field_validator("guide_number", mode="before")
     @classmethod

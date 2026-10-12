@@ -436,7 +436,7 @@ class VodManager:
         url = provider.movie_url(int(sel["panel_id"]), sel["ext"]) if sel["kind"] == "movie" else provider.episode_url(sel["panel_id"], sel["ext"])
         if not can_pipe(sel["ext"]):
             # MP4 may keep its index at the end: ffmpeg reads the URL itself (with seeks); no copy is kept.
-            return FfmpegInput(build_ffmpeg_args("ts", OpenedInput(url, dict(provider.headers))), tracker)
+            return FfmpegInput(build_ffmpeg_args("ts", OpenedInput(url, dict(provider.headers), ["-re"])), tracker)
         save = self.cfg.play_channel is not None and self.cfg.play_channel.save
         if save:
             self._queue(sel["key"], sel["kind"], sel["panel_id"], sel["title"], sel["ext"], target, sel.get("expected"),
@@ -484,7 +484,9 @@ class VodManager:
             self._set(key, status="cancelled")
             if self.current and self.current["key"] == key and self.current.get("task"):
                 self.current["task"].cancel()
-            Path(row["target"] + ".part").unlink(missing_ok=True)
+            part = Path(row["target"] + ".part")
+            if not Path(row["target"]).exists():
+                self._delete_files(part, self.root("movie" if row["kind"] == "movie" else "episode"))  # and empty folders
         else:
             raise ValueError(f"cannot {action} an item that is {row['status']}")
         self.wake()
