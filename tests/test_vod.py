@@ -612,3 +612,45 @@ def test_play_args_look_like_a_broadcast():
     assert args[args.index("-c:a") + 1] == "ac3"  # AAC headers break Plex desktop apps
     enc = pipe_args(reencode=True)
     assert enc[enc.index("-c:v") + 1] == "libx264" and "expr:gte(t,n_forced*2)" in enc
+
+
+@needs_ffmpeg
+async def test_keyframe_gap_and_auto_decision(tmp_path):
+    from pitlane.vod.play import keyframe_gap, needs_reencode
+
+    short = tmp_path / "short.mkv"
+    short.write_bytes(LONG_MEDIA)  # 20 s, keyframe every 1 s (10 fps, -g 10)
+    long = tmp_path / "long.mkv"
+    long.write_bytes(make_media(20, gop=80))  # keyframe every 8 s, like many films
+    tiny = tmp_path / "tiny.mkv"
+    tiny.write_bytes(MEDIA)  # 2 s: too little to tell
+    g_short, g_long, g_tiny = await keyframe_gap(short), await keyframe_gap(long), await keyframe_gap(tiny)
+    assert g_short is not None and g_short <= 1.01 and not needs_reencode(g_short)
+    assert g_long is not None and g_long >= 7.9 and needs_reencode(g_long)
+    assert g_tiny is None and needs_reencode(g_tiny)
+
+
+@needs_ffmpeg
+@pytest.mark.parametrize("gop,expect", [(10, "copied"), (80, "converted")])
+async def test_play_now_auto_copies_or_converts(tmp_path, gop, expect):
+    panel = FakePanel(LONG_MEDIA if gop == 10 else make_media(20, gop=80))
+    app = await make_app(tmp_path, panel)
+    server, task, base = await _serve(app)
+    try:
+        await app.vod.refresh_catalog()
+        await app.vod.play_movie(101)
+        async with httpx.AsyncClient(timeout=None) as c:
+            async with c.stream("GET", f"{base}/auto/v900") as resp:
+                first = await resp.aiter_raw().__anext__()
+                assert _ts(first)
+                assert app.vod.playing()["video"] == expect
+        assert len(panel.downloads) == 1  # the probe used the start-up burst: no extra request
+        calls = len(panel.downloads)
+        async with httpx.AsyncClient(timeout=None) as c:  # second time: decision remembered
+            async with c.stream("GET", f"{base}/auto/v900") as resp:
+                await resp.aiter_raw().__anext__()
+        assert len(panel.downloads) == calls + 1 and app.vod.playing()["video"] == expect
+    finally:
+        server.should_exit = True
+        await task
+        await app.shutdown()

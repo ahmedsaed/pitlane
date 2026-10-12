@@ -409,6 +409,32 @@ class VodManager:
         log.info("play now", extra={"title": sel["title"], "switched": switched})
         return {**sel, "switched": switched}
 
+    def known_gap(self, key: str) -> float | None:
+        """Remembered longest keyframe gap for a title (-1: could not tell), or None if never checked."""
+        v = self.state.get(f"vod.gop:{key}")
+        return float(v) if v is not None else None
+
+    def remember_gap(self, key: str, gap: float | None) -> None:
+        from .play import needs_reencode
+
+        self.state.set(f"vod.gop:{key}", str(-1 if gap is None else round(gap, 2)))
+        log.info(
+            "play now: video " + ("re-encoded" if needs_reencode(gap) else "copied"),
+            extra={"key": key, "keyframe_gap_s": None if gap is None else round(gap, 2)},
+        )
+
+    def _video_mode(self, key: str) -> str | None:
+        """For the UI: "copied" / "converted" once known."""
+        from .play import needs_reencode
+
+        mode = self.cfg.play_channel.reencode if self.cfg.play_channel else "auto"
+        if isinstance(mode, bool):
+            return "converted" if mode else "copied"
+        gap = self.known_gap(key)
+        if gap is None:
+            return None
+        return "converted" if needs_reencode(gap if gap >= 0 else None) else "copied"
+
     def selection_is_local(self) -> bool:
         """The picked title is downloaded, so it plays from disk (no panel connection)."""
         sel = self.selection()
@@ -425,7 +451,8 @@ class VodManager:
         if sel is None or pc is None:
             return None
         active = any(s.channel.id == PLAY_CHANNEL_ID for s in self.app.pool.in_use.values())
-        return {"key": sel["key"], "title": sel["title"], "channel": pc.guide_number, "channel_name": pc.name, "active": active}
+        return {"key": sel["key"], "title": sel["title"], "channel": pc.guide_number, "channel_name": pc.name, "active": active,
+                "video": self._video_mode(sel["key"])}  # fmt: skip
 
     async def open_play(self, tracker: Any) -> Any:
         """The relay input for the play channel (unstarted)."""
@@ -436,16 +463,28 @@ class VodManager:
         if sel is None:
             raise InputError("nothing picked: use Play now in Pitlane first")
         target = Path(sel["target"])
+        mode = self.cfg.play_channel.reencode
         if self.selection_is_local():
             log.info("play now: from the library", extra={"title": sel["title"]})
-            return LocalFileInput.for_path(target, tracker, self.cfg.play_channel.reencode, sel.get("vcodec") or "h264")
+            if mode == "auto":
+                from .play import keyframe_gap, needs_reencode
+
+                gap = self.known_gap(sel["key"])
+                if gap is None:
+                    gap = await keyframe_gap(target)  # local file: no panel request
+                    self.remember_gap(sel["key"], gap)
+                mode = needs_reencode(gap if gap is None or gap >= 0 else None)
+            return LocalFileInput.for_path(target, tracker, mode, sel.get("vcodec") or "h264")
         provider = self.provider
         url = provider.movie_url(int(sel["panel_id"]), sel["ext"]) if sel["kind"] == "movie" else provider.episode_url(sel["panel_id"], sel["ext"])
         if not can_pipe(sel["ext"]):
             # MP4 may keep its index at the end: ffmpeg reads the URL itself (with seeks); no copy is kept.
-            from .play import play_args
+            from .play import needs_reencode, play_args
 
-            args = play_args(url, self.cfg.play_channel.reencode, sel.get("vcodec"))
+            if mode == "auto":  # cannot look ahead without an extra request: re-encode unless known
+                gap = self.known_gap(sel["key"])
+                mode = gap is None or needs_reencode(gap if gap >= 0 else None)
+            args = play_args(url, mode, sel.get("vcodec"))
             ua = provider.headers.get("User-Agent")
             if ua:
                 args[args.index("-i"):args.index("-i")] = ["-user_agent", ua]
@@ -455,10 +494,7 @@ class VodManager:
             self._queue(sel["key"], sel["kind"], sel["panel_id"], sel["title"], sel["ext"], target, sel.get("expected"),
                         sel.get("series_id"), sel.get("season"), sel.get("episode"), status="paused", note="saving while watching")  # fmt: skip
         item = self.state.one("SELECT * FROM vod_items WHERE key=?", (sel["key"],)) or {"key": sel["key"], "target": str(target)}
-        from .play import pipe_args
-
-        args = pipe_args(self.cfg.play_channel.reencode, sel.get("vcodec") or "h264")
-        return PlayInput(self, item, url, dict(provider.headers), tracker, target if save else None, args)
+        return PlayInput(self, item, url, dict(provider.headers), tracker, target if save else None, mode, sel.get("vcodec") or "h264")
 
     def keep_watched(self, item: dict[str, Any], watch: Path | None, received: int, total: int | None, complete: bool) -> None:
         """After playback: a complete copy goes into the library, a partial one replaces a shorter ``.part``."""

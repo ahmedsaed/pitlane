@@ -17,7 +17,7 @@ PLEX = "http://plex.example.invalid:32400"
 USER, PASS = "user1", "pass1"
 
 
-def make_media(seconds: int = 2) -> bytes:
+def make_media(seconds: int = 2, gop: int = 10) -> bytes:
     """A small real MKV (ffmpeg testsrc), or filler bytes when ffmpeg is missing."""
     import shutil
     import subprocess
@@ -29,7 +29,7 @@ def make_media(seconds: int = 2) -> bytes:
         out = Path(d) / "t.mkv"
         subprocess.run(
             ["ffmpeg", "-v", "error", "-f", "lavfi", "-i", f"testsrc=size=160x90:rate=10:duration={seconds}",
-             "-c:v", "libx264", "-preset", "ultrafast", "-g", "10", str(out)],
+             "-c:v", "libx264", "-preset", "ultrafast", "-g", str(gop), "-keyint_min", str(gop), "-sc_threshold", "0", str(out)],
             check=True,
         )  # fmt: skip
         return out.read_bytes()

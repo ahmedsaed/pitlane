@@ -42,8 +42,9 @@ PIPE_FORMATS = {"mkv", "webm", "ts", "avi", "flv", "mpg", "mpeg"}
 # - Video is copied untouched, with the codec headers repeated at every keyframe. It starts
 #   when the title has a keyframe every ~2 s, as broadcasts and many episodes do. Titles with
 #   long gaps between keyframes (films often have ~10 s) fail in the desktop app ("dimensions
-#   not set") but play in Plex Web; ``reencode: true`` re-encodes video (x264, keyframe every
-#   2 s, about one CPU core for 1080p) for those.
+#   not set") but play in Plex Web. Those are re-encoded (x264, keyframe every 2 s, about one
+#   CPU core for 1080p). ``reencode: auto`` (default) decides per title from the keyframes in
+#   the first ~6 MB, which the panel sends in its start-up burst anyway; true/false force it.
 # - Output is paced at playback speed after a 3 s start-up burst, like a channel.
 PACE = ["-readrate", "1", "-readrate_initial_burst", "3"]
 AUDIO = ["-c:a", "ac3", "-b:a", "384k"]  # keeps 5.1 when the source has it
@@ -55,6 +56,55 @@ VIDEO_BSF = {
     "h264": "h264_mp4toannexb,dump_extra=freq=keyframe",
     "hevc": "hevc_mp4toannexb,dump_extra=freq=keyframe",
 }
+
+
+MAX_GAP_S = 3.0  # longest keyframe gap that Plex desktop apps still start (2 s works; 10 s does not)
+PROBE_BYTES = 6_000_000
+PROBE_WAIT_S = 6.0
+
+
+async def keyframe_gap(path: Path, seconds: int = 30) -> float | None:
+    """Longest gap between video keyframes in the first ``seconds`` of ``path`` (packet
+    flags only, nothing is decoded). ``None`` when there is too little video to tell."""
+    import shutil
+
+    exe = shutil.which("ffprobe")
+    if not exe:
+        return None
+    proc = await asyncio.create_subprocess_exec(
+        exe, "-v", "error", "-select_streams", "v:0", "-read_intervals", f"%+{seconds}",
+        "-show_entries", "packet=pts_time,flags", "-of", "csv=p=0", str(path),
+        stdin=asyncio.subprocess.DEVNULL, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
+    )  # fmt: skip
+    try:
+        out, _ = await asyncio.wait_for(proc.communicate(), 20)
+    except TimeoutError:
+        proc.kill()
+        await proc.wait()
+        return None
+    pts: list[float] = []
+    keys: list[float] = []
+    for line in out.decode(errors="replace").splitlines():
+        t, _, flags = line.partition(",")
+        try:
+            v = float(t)
+        except ValueError:
+            continue
+        pts.append(v)
+        if "K" in flags:
+            keys.append(v)
+    if not keys or not pts:
+        return None
+    gaps = [b - a for a, b in zip(keys, keys[1:])]
+    tail = max(pts) - keys[-1]  # time since the last keyframe: a lower bound for the next gap
+    longest = max([*gaps, tail])
+    if longest <= MAX_GAP_S and max(pts) - keys[0] < MAX_GAP_S + 0.5:
+        return None  # not enough video seen to rule out a long gap
+    return longest
+
+
+def needs_reencode(gap: float | None) -> bool:
+    return gap is None or gap > MAX_GAP_S
 
 
 def video_args(reencode: bool, vcodec: str | None) -> list[str]:
@@ -96,14 +146,19 @@ class PlayInput:
     """Relay input for the play channel: same interface as FfmpegInput."""
 
     def __init__(self, mgr: "VodManager", item: dict[str, Any], url: str, headers: dict[str, str],
-                 tracker: ProcessTracker | None, save_to: Path | None, args: list[str] | None = None) -> None:  # fmt: skip
+                 tracker: ProcessTracker | None, save_to: Path | None, reencode: Any = "auto",
+                 vcodec: str | None = None) -> None:  # fmt: skip
         self.mgr = mgr
         self.item = item
         self.url = url
         self.headers = headers
         self.tracker = tracker
         self.save_to = save_to  # final library path, or None
-        self.ff = _PipedFfmpeg(args or pipe_args(), tracker)
+        self.reencode = reencode  # True / False / "auto"
+        self.vcodec = vcodec
+        self.ff: _PipedFfmpeg | None = None
+        self._prefix = b""
+        self._chunks: Any = None
         self.stderr_tail: deque[str] = deque(maxlen=5)
         self._cm: Any = None
         self._resp: httpx.Response | None = None
@@ -131,6 +186,9 @@ class PlayInput:
             raise InputError(f"HTTP {resp.status_code}")
         cl = resp.headers.get("content-length")
         self.total = int(cl) if cl and cl.isdigit() else None
+        self._chunks = resp.aiter_bytes()
+        reencode = await self._decide()
+        self.ff = _PipedFfmpeg(pipe_args(reencode, self.vcodec), self.tracker)
         if self.save_to is not None:
             self._watch = Path(str(self.save_to) + ".watch")
             self._watch.parent.mkdir(parents=True, exist_ok=True)
@@ -138,12 +196,47 @@ class PlayInput:
         await self.ff.start()
         self._feeder = asyncio.get_running_loop().create_task(self._feed(), name="vod-play-feed")
 
+    async def _decide(self) -> bool:
+        """Copy or re-encode the video (``reencode: auto``): look at the keyframes in the
+        start-up burst, which is read anyway; the answer is remembered per title."""
+        if isinstance(self.reencode, bool):
+            return self.reencode
+        key = self.item["key"]
+        known = self.mgr.known_gap(key)
+        if known is not None:
+            return needs_reencode(known if known >= 0 else None)
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + PROBE_WAIT_S
+        try:
+            while len(self._prefix) < PROBE_BYTES and loop.time() < deadline:
+                chunk = await asyncio.wait_for(self._chunks.__anext__(), max(0.1, deadline - loop.time()))
+                self._prefix += chunk
+        except (StopAsyncIteration, TimeoutError):
+            pass
+        tmp = self.mgr.app.data_dir / "tmp" / f"probe-{os.getpid()}-{id(self)}.bin"
+        tmp.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            tmp.write_bytes(self._prefix)
+            gap = await keyframe_gap(tmp)
+        finally:
+            tmp.unlink(missing_ok=True)
+        self.mgr.remember_gap(key, gap)
+        return needs_reencode(gap)
+
     async def _feed(self) -> None:
-        assert self._resp is not None and self.ff.proc and self.ff.proc.stdin
+        assert self._resp is not None and self.ff is not None and self.ff.proc and self.ff.proc.stdin
         stdin = self.ff.proc.stdin
         unflushed = 0
+
+        async def chunks():  # the probed start-up bytes first, then the rest of the response
+            if self._prefix:
+                yield self._prefix
+                self._prefix = b""
+            async for chunk in self._chunks:
+                yield chunk
+
         try:
-            async for chunk in self._resp.aiter_bytes():
+            async for chunk in chunks():
                 if self._file is not None:
                     self._file.write(chunk)
                 self.received += len(chunk)
@@ -167,17 +260,18 @@ class PlayInput:
                 pass
 
     async def read(self, n: int = CHUNK) -> bytes:
+        assert self.ff is not None
         return await self.ff.read(n)
 
     @property
     def returncode(self) -> int | None:
-        return self.ff.returncode
+        return self.ff.returncode if self.ff else None
 
     async def wait_exit(self, timeout: float = 2.0) -> int | None:
-        return await self.ff.wait_exit(timeout)
+        return await self.ff.wait_exit(timeout) if self.ff else None
 
     def error_text(self) -> str:
-        return " | ".join([*self.stderr_tail, self.ff.error_text()])
+        return " | ".join([*self.stderr_tail, *([self.ff.error_text()] if self.ff else [])])
 
     async def _close_http(self) -> None:
         if self._cm is not None:
@@ -195,7 +289,8 @@ class PlayInput:
             except (asyncio.CancelledError, Exception):
                 pass
         await self._close_http()
-        await self.ff.aclose()
+        if self.ff is not None:
+            await self.ff.aclose()
         if self._file is not None:
             self._file.close()
             self._file = None

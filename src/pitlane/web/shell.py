@@ -111,7 +111,7 @@ JS = r"""
     const c = [`<span class="chip ${S.tuners.in_use ? 'busy' : ''}" title="Plex tuner slots in use">Tuners <b>${S.tuners.in_use}/${S.tuners.count}</b></span>`];
     for (const [n, x] of Object.entries(S.connections)) c.push(x.held ? `<a class="chip" href="/" title="Freed for you; Pitlane opens no connection">${esc(n)} <b>freed</b></a>` : `<span class="chip ${x.in_use ? 'busy' : ''}" title="${esc(x.users.join(', ') || 'Connections to this provider (streams, checks, downloads)')}">${esc(n)} <b>${x.in_use}/${x.limit}</b></span>`);
     const pl = S.vod && S.vod.playing;
-    if (pl && pl.active) c.push(`<span class="chip busy" title="Playing on ${esc(pl.channel_name)}">▶ ${esc(pl.channel)} <b>${esc(pl.title)}</b></span>`);
+    if (pl && pl.active) c.push(`<span class="chip busy" title="Playing on ${esc(pl.channel_name)}${pl.video ? ' · video ' + esc(pl.video) : ''}">▶ ${esc(pl.channel)} <b>${esc(pl.title)}</b></span>`);
     if (S.vod) c.push(`<a class="chip ${S.vod.current ? 'busy' : ''}" href="/vod/downloads" title="Movies &amp; Shows downloads"><span class="dot ${S.vod.current ? 'running' : ''}"></span>${esc(S.vod.summary)}</a>`);
     el.innerHTML = c.join('');
   };

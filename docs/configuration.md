@@ -141,7 +141,7 @@ vod:                                 # docs/vod.md: movies and shows from an xtr
     guide_number: 900
     name: Pitlane Cinema
     save: false                      # true: also keep what is watched (no extra requests); off by default, copies via Download
-    reencode: false                  # true: re-encode video (keyframe every 2 s) for long-GOP films in Plex desktop apps; ~1 CPU core
+    reencode: auto                   # auto: re-encode video only when keyframes are > 3 s apart (checked per title); true/false force it
 ```
 
 ### Notifications (OPS-7)
