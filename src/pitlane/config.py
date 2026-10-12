@@ -470,7 +470,7 @@ class PlayChannelCfg(Strict):
     guide_number: str = "900"
     name: str = "Pitlane Cinema"
     save: bool = False  # keep a copy of what is watched (same bytes, no extra requests); off: copies only via Download
-    reencode: bool = True  # broadcast-like video (keyframe every 2 s) so Plex desktop apps can start it; ~1 CPU core
+    reencode: bool = False  # true: re-encode video (keyframe every 2 s) for long-GOP films in Plex desktop apps; ~1 CPU core
 
     @field_validator("guide_number", mode="before")
     @classmethod

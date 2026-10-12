@@ -34,20 +34,19 @@ log = get_logger("vod.play")
 PIPE_FORMATS = {"mkv", "webm", "ts", "avi", "flv", "mpg", "mpeg"}
 
 
-# Plex's Live TV path for desktop apps (HTTP, direct-stream audio, Matroska) starts reading
-# at the newest 1 s segment and gives up if it cannot learn the stream's parameters within
-# ~1.7 s [verified 2026-10-12, PMS 1.43.4 + Plex for Linux]. Broadcast channels have a
-# keyframe every 1-2 s and repeat their codec headers; downloaded films often have one every
-# ~10 s and AAC headers that only make sense in a file. So the play channel is made to look
-# like a broadcast:
-# - paced at playback speed after a 3 s start-up burst (the panel's opening burst of ~40 s of
-#   video otherwise reaches Plex at once);
-# - video re-encoded (x264 veryfast, keyframe every 2 s; about one CPU core for 1080p);
-# - audio re-encoded to plain stereo AAC-LC.
-# ``reencode: false`` copies video instead (parameter sets repeated at keyframes): no CPU
-# cost, but Plex desktop apps then fail to start ("dimensions not set").
+# Plex's Live TV path for desktop apps (HTTP, direct-stream audio, Matroska; e.g. Plex for
+# Linux) starts reading ~0.8 s into the recording and gives up if it cannot learn the stream's
+# parameters within a couple of seconds [verified 2026-10-12, PMS 1.43.4]:
+# - AAC copied out of a file (or re-encoded to AAC) fails: "Error parsing AAC extradata".
+#   AC3 carries its settings in every frame, so audio is converted to AC3 (cheap).
+# - Video is copied untouched, with the codec headers repeated at every keyframe. It starts
+#   when the title has a keyframe every ~2 s, as broadcasts and many episodes do. Titles with
+#   long gaps between keyframes (films often have ~10 s) fail in the desktop app ("dimensions
+#   not set") but play in Plex Web; ``reencode: true`` re-encodes video (x264, keyframe every
+#   2 s, about one CPU core for 1080p) for those.
+# - Output is paced at playback speed after a 3 s start-up burst, like a channel.
 PACE = ["-readrate", "1", "-readrate_initial_burst", "3"]
-AUDIO = ["-c:a", "aac", "-ac", "2", "-b:a", "192k"]
+AUDIO = ["-c:a", "ac3", "-b:a", "384k"]  # keeps 5.1 when the source has it
 VIDEO_X264 = [
     "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-maxrate", "8M", "-bufsize", "16M", "-pix_fmt", "yuv420p",
     "-force_key_frames", "expr:gte(t,n_forced*2)", "-sc_threshold", "0",
@@ -65,7 +64,7 @@ def video_args(reencode: bool, vcodec: str | None) -> list[str]:
     return ["-c:v", "copy", *(["-bsf:v", bsf] if bsf else [])]
 
 
-def play_args(src: str, reencode: bool = True, vcodec: str | None = None) -> list[str]:
+def play_args(src: str, reencode: bool = False, vcodec: str | None = None) -> list[str]:
     return [
         ffmpeg_binary(), "-hide_banner", "-loglevel", "warning", *PACE, "-i", src,
         "-map", "0:v:0?", "-map", "0:a:0?", *video_args(reencode, vcodec), *AUDIO,
@@ -73,7 +72,7 @@ def play_args(src: str, reencode: bool = True, vcodec: str | None = None) -> lis
     ]  # fmt: skip
 
 
-def pipe_args(reencode: bool = True, vcodec: str | None = None) -> list[str]:
+def pipe_args(reencode: bool = False, vcodec: str | None = None) -> list[str]:
     return play_args("pipe:0", reencode, vcodec)
 
 
@@ -207,7 +206,7 @@ class LocalFileInput(FfmpegInput):
     """A title already in the library: played from disk at real time (no panel request)."""
 
     @classmethod
-    def for_path(cls, path: Path, tracker: ProcessTracker | None, reencode: bool = True, vcodec: str | None = None) -> "LocalFileInput":
+    def for_path(cls, path: Path, tracker: ProcessTracker | None, reencode: bool = False, vcodec: str | None = None) -> "LocalFileInput":
         return cls(play_args(str(path), reencode, vcodec), tracker)
 
 

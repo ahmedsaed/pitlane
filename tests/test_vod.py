@@ -606,9 +606,9 @@ async def test_play_now_copies_nothing_by_default_and_is_paced(tmp_path, panel):
 def test_play_args_look_like_a_broadcast():
     from pitlane.vod.play import pipe_args
 
-    args = pipe_args()
+    args = pipe_args(vcodec="h264")  # default: video untouched
     assert args[args.index("-readrate") + 1] == "1" and args.index("-readrate") < args.index("-i")
-    assert args[args.index("-c:v") + 1] == "libx264" and "expr:gte(t,n_forced*2)" in args  # keyframe every 2 s
-    assert args[args.index("-c:a") + 1] == "aac" and args[args.index("-ac") + 1] == "2"
-    copy = pipe_args(reencode=False, vcodec="h264")
-    assert copy[copy.index("-c:v") + 1] == "copy" and "dump_extra=freq=keyframe" in copy[copy.index("-bsf:v") + 1]
+    assert args[args.index("-c:v") + 1] == "copy" and "dump_extra=freq=keyframe" in args[args.index("-bsf:v") + 1]
+    assert args[args.index("-c:a") + 1] == "ac3"  # AAC headers break Plex desktop apps
+    enc = pipe_args(reencode=True)
+    assert enc[enc.index("-c:v") + 1] == "libx264" and "expr:gte(t,n_forced*2)" in enc
