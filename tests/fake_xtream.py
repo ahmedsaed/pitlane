@@ -47,6 +47,7 @@ class FakePanel:
             {"stream_id": 101, "name": "Ong Bak 3 (2010)", "category_id": "1", "rating": "5.8", "stream_icon": "https://img.example.invalid/ob3.jpg", "added": "1600000000", "container_extension": "mkv", "is_adult": 0},
             {"stream_id": 102, "name": "Ong Bak 3 (2010) CAM", "category_id": "1", "rating": "5", "stream_icon": f"{PANEL}/images/x.jpg", "added": "1500000000", "container_extension": "mkv", "is_adult": 0},
             {"stream_id": 103, "name": "حق ميت", "category_id": "2", "rating": "7", "stream_icon": "", "added": "1700000000", "container_extension": "mp4", "is_adult": 0},
+            {"stream_id": 105, "name": "Second Film (2021)", "category_id": "1", "rating": "6", "stream_icon": "", "added": "1650000000", "container_extension": "mkv", "is_adult": 0},
             {"stream_id": 104, "name": "Adult Thing", "category_id": "1", "rating": "1", "stream_icon": "", "added": "1700000001", "container_extension": "mkv", "is_adult": "1"},
         ]
         self.series_categories = [{"category_id": "9", "category_name": "English Series"}]
@@ -146,9 +147,13 @@ class FakePlex:
         self.scans: list[tuple[int, str]] = []
         self.views: dict[str, int] = {}
         self.unmatched = unmatched or set()
+        self.ignore_folder_scans = False  # like a new Plex library before its first full scan
+        self.full_scans: set[int] = set()
 
     def _items(self, section: int, type_: int) -> list[dict]:
-        out = []
+        out: list[dict] = []
+        if self.ignore_folder_scans and section not in self.full_scans:
+            return out
         for f in sorted(self.roots[section].rglob("*")):
             if not f.is_file() or f.name.endswith(".part"):
                 continue
@@ -168,6 +173,8 @@ class FakePlex:
             section = int(m.group(1))
             if m.group(2) == "refresh":
                 self.scans.append((section, q.get("path", "")))
+                if "path" not in q:
+                    self.full_scans.add(section)
                 return httpx.Response(200)
             return httpx.Response(200, json={"MediaContainer": {"Metadata": self._items(section, int(q.get("type", 1)))}})
         m = re.match(r"^/library/metadata/(\d+)$", url.path)

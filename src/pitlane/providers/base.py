@@ -27,7 +27,7 @@ from ..models import Event, SessionType
 if TYPE_CHECKING:
     pass
 
-SourceKind = Literal["hls", "ts", "file", "tuner"]
+SourceKind = Literal["hls", "ts", "file", "tuner", "vod"]  # vod: the "Play now" channel (docs/vod.md)
 SourceState = Literal["online", "degraded", "offline", "unknown"]
 
 

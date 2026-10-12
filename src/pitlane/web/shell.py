@@ -25,7 +25,7 @@ CSS = """
 --accent:#d0140d;--accent-fg:#fff;--shadow:0 1px 2px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.04);--r:10px}
 :root[data-theme=dark]{--bg:#111317;--fg:#e8eaee;--muted:#9aa1ad;--card:#1a1d23;--line:#2a2e36;--soft:#22262d;--ok:#4cc27a;--warn:#e0a240;--bad:#f07068;--accent:#ff4d42;--shadow:none}
 @media (prefers-color-scheme: dark){:root:not([data-theme=light]){--bg:#111317;--fg:#e8eaee;--muted:#9aa1ad;--card:#1a1d23;--line:#2a2e36;--soft:#22262d;--ok:#4cc27a;--warn:#e0a240;--bad:#f07068;--accent:#ff4d42;--shadow:none}}
-*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}[hidden]{display:none!important}
 body{margin:0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--fg)}
 a{color:inherit}a:hover{color:var(--accent)}
 header.top{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
@@ -105,7 +105,9 @@ JS = r"""
   const R = {};
   R.chips = el => {
     const c = [`<span class="chip ${S.tuners.in_use ? 'busy' : ''}" title="Plex tuner slots in use">Tuners <b>${S.tuners.in_use}/${S.tuners.count}</b></span>`];
-    for (const [n, x] of Object.entries(S.connections)) c.push(`<span class="chip ${x.in_use ? 'busy' : ''}" title="Connections to this provider (streams, checks, downloads)">${esc(n)} <b>${x.in_use}/${x.limit}</b></span>`);
+    for (const [n, x] of Object.entries(S.connections)) c.push(x.held ? `<a class="chip" href="/" title="Freed for you; Pitlane opens no connection">${esc(n)} <b>freed</b></a>` : `<span class="chip ${x.in_use ? 'busy' : ''}" title="${esc(x.users.join(', ') || 'Connections to this provider (streams, checks, downloads)')}">${esc(n)} <b>${x.in_use}/${x.limit}</b></span>`);
+    const pl = S.vod && S.vod.playing;
+    if (pl && pl.active) c.push(`<span class="chip busy" title="Playing on ${esc(pl.channel_name)}">▶ ${esc(pl.channel)} <b>${esc(pl.title)}</b></span>`);
     if (S.vod) c.push(`<a class="chip ${S.vod.current ? 'busy' : ''}" href="/vod/downloads" title="Movies &amp; Shows downloads"><span class="dot ${S.vod.current ? 'running' : ''}"></span>${esc(S.vod.summary)}</a>`);
     el.innerHTML = c.join('');
   };
@@ -124,6 +126,17 @@ JS = r"""
   };
   R.channels = () => { const on = new Set(S.streams.map(s => s.channel));
     for (const el of $$('[data-ch-live]')) el.hidden = !on.has(el.dataset.chLive); };
+  const until = t => t === -1 ? 'until you resume it' : 'until ' + new Date(t * 1000).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  R.conns = el => {
+    el.innerHTML = Object.entries(S.connections).map(([n, x]) => {
+      const head = `<div class="row" style="justify-content:space-between"><div><b>${esc(n)}</b> <span class="muted small">${x.in_use}/${x.limit} in use</span>` +
+        `<div class="small ${x.held ? 'degraded' : 'muted'}">${x.held ? `Freed for you ${until(x.held)}: Pitlane opens no connection.` : (x.users.length ? 'Used by ' + x.users.map(esc).join(' · ') : 'Not in use')}</div></div>`;
+      const ctl = x.held
+        ? `<form class="inline" method="post" action="/ui/provider/resume" data-ajax><input type="hidden" name="provider" value="${esc(n)}"><button class="primary">Resume</button></form>`
+        : `<form class="row" method="post" action="/ui/provider/free" data-ajax ${x.users.length ? `data-confirm="Stop ${esc(x.users.join(' and '))}?"` : ''}><input type="hidden" name="provider" value="${esc(n)}">` +
+          `<select name="minutes"><option value="60">for 1 hour</option><option value="180">for 3 hours</option><option value="0">until I resume</option></select><button class="danger">Free the connection</button></form>`;
+      return head + ctl + '</div>'; }).join('<hr style="border:0;border-top:1px solid var(--line);margin:10px 0">');
+  };
   R.replays = el => {
     if (!S.replay_jobs.length) { el.innerHTML = '<div class="empty">No replay downloads.</div>'; return; }
     el.innerHTML = '<div class="scroll"><table><tr><th>Event</th><th>Session</th><th>Title</th><th>Status</th><th>Error</th><th></th></tr>' + S.replay_jobs.map(j =>
@@ -143,6 +156,7 @@ JS = r"""
   R.vodStatus = el => { const v = S.vod, c = v.current;
     const cap = (u, g) => size(u) + (g ? ` of ${g} GB` : '');
     el.innerHTML = '<div class="stat">' +
+      (v.playing && v.playing.active ? `<div><div class="k">On channel ${esc(v.playing.channel)}</div><div class="v">▶ ${esc(v.playing.title)}</div><div class="muted small">downloads wait while it plays</div></div>` : '') +
       `<div><div class="k">Now</div><div class="v">${c ? esc(c.title) : 'Idle'}</div><div class="muted small">${c ? `${size(c.rate)}/s · ${eta((c.total || 0) - c.done, c.rate)}` : esc(v.blocked || (v.queued ? `${v.queued} queued` : 'Nothing queued'))}</div></div>` +
       `<div><div class="k">Data used</div><div class="v">${cap(v.usage.day, v.caps.day)} today</div><div class="muted small">${cap(v.usage.month, v.caps.month)} this month</div></div>` +
       `<div><div class="k">Free space</div><div class="v">${size(v.free.movie)}</div><div class="muted small">shows ${size(v.free.episode)} · keeps ${size(v.min_free)} free</div></div>` +
@@ -170,10 +184,13 @@ JS = r"""
     el.innerHTML = u.map(it => `<div class="row" style="justify-content:space-between;padding:6px 0"><span>${esc(it.title)} <span class="muted small">${esc(it.match)}</span></span>` +
       (S.vod.machine_id && it.rating_key ? `<a class="btn" target="_blank" rel="noopener" href="https://app.plex.tv/desktop/#!/server/${esc(S.vod.machine_id)}/details?key=${encodeURIComponent('/library/metadata/' + it.rating_key)}">Fix Match in Plex ↗</a>` : '<span class="muted small">not in Plex yet</span>') + '</div>').join('');
   };
+  const playBtn = el => { if (!S.vod.play_channel || !el.dataset.play) return '';
+    const [k, v] = el.dataset.play.split('='), pl = S.vod.playing, on = pl && pl.key === el.dataset.vodItem;
+    return `<form class="inline" method="post" action="/vod/play" data-ajax><input type="hidden" name="${esc(k)}" value="${esc(v)}"><button class="${on ? '' : 'primary'}" title="Watch now on channel ${esc(S.vod.play_channel)} in Plex Live TV">▶ ${on ? 'On' : 'Play on'} channel ${esc(S.vod.play_channel)}</button></form>`; };
   R.vodItem = el => { const key = el.dataset.vodItem, it = S.vod.items.find(x => x.key === key);
     if (!it || it.status === 'cancelled' || it.status === 'deleted') {
-      el.innerHTML = `<form method="post" action="${esc(el.dataset.requestUrl)}" data-ajax><input type="hidden" name="id" value="${esc(el.dataset.requestId)}"><button class="primary">Download to Plex</button></form>`; return; }
-    el.innerHTML = `<div class="row"><span class="dot ${esc(it.status)}"></span><b>${esc(statusText(it))}</b>${it.match ? `<span class="muted small">· Plex: ${esc(it.match)}</span>` : ''}</div><div style="max-width:420px;margin:6px 0">${progress(it)}</div><div class="row">${actionBtns(it)}</div>` +
+      el.innerHTML = `<div class="row">${playBtn(el)}<form class="inline" method="post" action="${esc(el.dataset.requestUrl)}" data-ajax><input type="hidden" name="id" value="${esc(el.dataset.requestId)}"><button>Download to Plex</button></form></div>`; return; }
+    el.innerHTML = `<div class="row"><span class="dot ${esc(it.status)}"></span><b>${esc(statusText(it))}</b>${it.match ? `<span class="muted small">· Plex: ${esc(it.match)}</span>` : ''}</div><div style="max-width:420px;margin:6px 0">${progress(it)}</div><div class="row">${playBtn(el)}${actionBtns(it)}</div>` +
       (it.error ? `<div class="small muted">${esc(it.error)}</div>` : '');
   };
   R.vodBadges = () => { const by = new Map(S.vod.items.map(it => [it.key, it]));
@@ -211,7 +228,7 @@ JS = r"""
     const body = new URLSearchParams(new FormData(f, btn));
     if (btn) btn.classList.add('busy');
     try {
-      const r = await fetch(f.action, {method: 'POST', body, headers: {Accept: 'application/json'}});
+      const r = await fetch((btn && btn.getAttribute('formaction')) || f.action, {method: 'POST', body, headers: {Accept: 'application/json'}});
       const j = await r.json().catch(() => ({ok: r.ok, msg: r.ok ? 'Done' : `Failed (HTTP ${r.status})`}));
       toast(j.msg, !j.ok);
       if (j.ok && f.dataset.after === 'reload') setTimeout(() => location.reload(), 400);

@@ -122,8 +122,10 @@ def ui_router(app: "App") -> APIRouter:
         spoilers_off = request.query_params.get("spoilers") == "show" or not app.cfg.spoiler.enabled
         s = status()
         out = []
-        # Now playing (live)
+        # Now playing and limited accounts (live)
         out.append("<section class=card><h2>Now playing</h2><div data-r=streams><div class=empty>Loading…</div></div></section>")
+        if app.connections.limits:
+            out.append("<section class=card><h2>Account connections <span class=sub>free one to use the account elsewhere</span></h2><div data-r=conns></div></section>")
         # Channels: one row each, sources (failover order) behind a disclosure; health is live
         out.append(f"<section class=card><h2>Channels <span class=sub>{len(s['channels'])} channels · click one for its sources in failover order</span></h2><div class=chans>")
         for c in s["channels"]:
@@ -248,6 +250,37 @@ def ui_router(app: "App") -> APIRouter:
 
         body = (await request.body()).decode()
         return {k: v[0] for k, v in parse_qs(body).items()}
+
+    @r.post("/ui/provider/free")
+    async def provider_free(request: Request):
+        """Free a limited provider's connection for the operator (end streams, pause downloads)."""
+        if err := _check_auth(app, request):
+            return err
+        if not _same_origin(request):
+            return Response(status_code=403)
+        f = await _form(request)
+        name = f.get("provider", "")
+        if name not in app.connections.limits:
+            return done(request, "/", f"Unknown provider {name!r}", ok=False)
+        minutes = int(f.get("minutes", "60") or 0)
+        res = await app.free_provider(name, minutes * 60 if minutes > 0 else None)
+        what = []
+        if res["streams"]:
+            what.append(f"stopped {res['streams']} stream{'s' if res['streams'] > 1 else ''}")
+        if res["downloads"]:
+            what.append("paused the download")
+        span = f"for {minutes // 60} h" if minutes >= 60 and minutes % 60 == 0 else (f"for {minutes} min" if minutes > 0 else "until you resume it")
+        return done(request, "/", f"The {name} account is yours {span}" + (f" ({', '.join(what)})" if what else ""))
+
+    @r.post("/ui/provider/resume")
+    async def provider_resume(request: Request):
+        if err := _check_auth(app, request):
+            return err
+        if not _same_origin(request):
+            return Response(status_code=403)
+        f = await _form(request)
+        app.resume_provider(f.get("provider", ""))
+        return done(request, "/", "Pitlane may use the connection again")
 
     @r.post("/ui/reload")
     async def reload(request: Request):

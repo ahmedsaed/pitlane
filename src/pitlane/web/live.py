@@ -20,9 +20,7 @@ def live_state(app: "App") -> dict[str, Any]:
     names = {c.id: c.name for c in cm.channels.values()}
     out: dict[str, Any] = {
         "tuners": {"count": app.pool.count, "in_use": len(app.pool.in_use)},
-        "connections": {
-            n: {"in_use": app.connections.in_use(n), "limit": lim} for n, lim in sorted(app.connections.limits.items())
-        },
+        "connections": {n: _conn(app, n, lim) for n, lim in sorted(app.connections.limits.items())},
         "reload_error": app.reload_error,
         "streams": [
             {
@@ -45,6 +43,22 @@ def live_state(app: "App") -> dict[str, Any]:
         "vod": vod_state(app) if app.vod else None,
     }
     return out
+
+
+def _conn(app: "App", provider: str, limit: int) -> dict[str, Any]:
+    """Who is using a limited provider's connections, and whether the operator holds it."""
+    users = [
+        f"Live TV: {s.channel.name}" for s in app.pool.in_use.values() if s.current is not None and s.current.provider == provider
+    ]
+    if app.vod and app.vod.current and app.vod.cfg.provider == provider:
+        users.append(f"Download: {app.vod.current['title']}")
+    held = app.connections.held_until(provider)
+    return {
+        "in_use": app.connections.in_use(provider),
+        "limit": limit,
+        "users": users,
+        "held": None if held is None else (-1 if held == float("inf") else int(held)),
+    }
 
 
 def vod_state(app: "App") -> dict[str, Any]:
@@ -79,6 +93,8 @@ def vod_state(app: "App") -> dict[str, Any]:
             "0": "The panel can't resume: an interrupted download restarts.",
         }.get(rng or "", "Resume support is checked on the first interrupted download."),
         "machine_id": m._machine_id,
+        "playing": m.playing(),
+        "play_channel": cfg.play_channel.guide_number if cfg.play_channel else None,
         "items": [
             {
                 "key": r["key"],

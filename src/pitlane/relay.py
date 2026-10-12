@@ -307,6 +307,8 @@ class RelayHooks:
     probe: Callable[[Source], Awaitable[Any]] | None = None
     # LIVE-10: per-provider connection limits (None = unlimited)
     limiter: ConnectionLimiter | None = None
+    # docs/vod.md "Play now": builds the (unstarted) input for a ``vod`` source
+    open_vod: Callable[[Any], Awaitable[Any]] | None = None
 
 
 class TuneFailed(Exception):
@@ -336,8 +338,29 @@ class StreamSession:
     _opened: OpenedInput | None = None
     _deferred: set = field(default_factory=set)  # source ids put back because their provider was busy
     offline_sources: list[Source] = field(default_factory=list)  # LIVE-6 last resort
+    _restart: bool = False  # play channel: a new title was picked
+    _stopped: bool = False  # the operator freed the provider's connection
+
+    def stop(self) -> None:
+        """End this stream: close the input; :meth:`chunks` then ends the response."""
+        self._stopped = True
+        if self._input is not None:
+            asyncio.get_running_loop().create_task(self._input.aclose())
+
+    def request_restart(self) -> None:
+        """Play channel: close the input; :meth:`chunks` reopens the source with the new title."""
+        self._restart = True
+        if self._input is not None:
+            asyncio.get_running_loop().create_task(self._input.aclose())
 
     async def _open_input(self, src: Source) -> Any:
+        if src.kind == "vod":
+            if self.hooks.open_vod is None:
+                raise InputError("play channel not available")
+            self._opened = None
+            inp = await self.hooks.open_vod(self.tracker)
+            await inp.start()
+            return inp
         provider = self.hooks.get_provider(src.provider)
         if provider is None:
             raise InputError("provider not running")
@@ -386,7 +409,12 @@ class StreamSession:
         """LIVE-10: a connection slot for ``src``. Returns ``False`` when the source was
         put back at the end of the list because its provider is busy streaming."""
         limiter = self.hooks.limiter
-        if limiter is None or limiter.limit(src.provider) is None:
+        if limiter is None:
+            return None
+        if limiter.held_until(src.provider) is not None:
+            log.info("provider connection freed by the operator; source skipped", extra={"channel": self.channel.id, "source": src.id})
+            return False
+        if limiter.limit(src.provider) is None:
             return None
         wait = self.stall_timeout if deadline is None else max(0.0, deadline - time.monotonic())
         retry = src.id in self._deferred
@@ -512,12 +540,35 @@ class StreamSession:
             try:
                 data = await asyncio.wait_for(self._input.read(CHUNK), self.stall_timeout)
             except TimeoutError:
+                if src.kind == "vod":  # a title has no backup; restarting it from the top would be worse
+                    log.warning("play channel stalled; ending stream", extra={"channel": self.channel.id, "stall_timeout": self.stall_timeout})
+                    return
                 log.warning("source stalled", extra={"channel": self.channel.id, "source": src.id, "stall_timeout": self.stall_timeout})
                 await self._fail(src, "degraded", f"stalled for {self.stall_timeout:g}s")
                 data = None
-            if data:
+            if data and not self._stopped:
                 yield data
                 continue
+            if self._stopped:
+                log.info("stream stopped by the operator", extra={"channel": self.channel.id})
+                return
+            if data is not None and self._restart:  # play channel: switch to the newly picked title
+                self._restart = False
+                await self._close_input()
+                self._idx, self.current = -1, None
+                try:
+                    data = await self._first_bytes(None)
+                except TuneFailed:
+                    return
+                yield data
+                continue
+            if data is not None and src.kind == "vod":  # the title ended (or failed): end the stream
+                code = await self._input.wait_exit()
+                if code:
+                    log.warning("play channel stopped", extra={"channel": self.channel.id, "error": self._input.error_text()})
+                else:
+                    log.info("play channel: title finished", extra={"channel": self.channel.id})
+                return
             if data is not None:  # EOF
                 code = await self._input.wait_exit()
                 if code:

@@ -188,6 +188,8 @@ def _when(dt: datetime, tz: ZoneInfo) -> str:
 
 
 def _filler_desc(ch: ChannelCfg, nxt: Programme | None, tz: ZoneInfo) -> str:
+    if ch.filler_desc:
+        return ch.filler_desc
     if not ch.series:
         return f"Live sports on {ch.name}. The provider publishes no listings for this channel."
     if nxt is None or nxt.official_start is None:
@@ -237,7 +239,7 @@ def _fillers(
         following = next((p for p in progs if p.start >= w_end), None)
         gaps.append((cursor, w_end, following))
 
-    title = ch.name if ch.series else f"{ch.name} {EN_DASH} Live"
+    title = ch.name if ch.series or ch.filler_desc else f"{ch.name} {EN_DASH} Live"
     for g_start, g_end, nxt in gaps:
         cuts = [g_start]
         while cuts[-1] < g_end:

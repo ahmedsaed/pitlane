@@ -122,6 +122,9 @@ class VodManager:
         # A download interrupted by a restart resumes from its .part file.
         self.state.execute("UPDATE vod_items SET status='queued' WHERE status='running'")
         if background:
+            # A restart between a finished download and its Plex scan would leave it unscanned.
+            for row in self.state.query("SELECT key FROM vod_items WHERE status='done' AND match_state IS NULL"):
+                self._spawn(self._after_download(row["key"]), f"vod-plex-{row['key']}")
             self._spawn(self._catalog_loop(), "vod-catalog")
             self._spawn(self._worker(), "vod-downloads")
             self._spawn(self._retention_loop(), "vod-retention")
@@ -269,16 +272,21 @@ class VodManager:
 
     # ------------------------------------------------------------------ requests (VOD-2)
     def _queue(self, key: str, kind: str, panel_id: str, title: str, ext: str, target: Path, expected: int | None,
-               series_id: int | None = None, season: int | None = None, episode: int | None = None) -> bool:  # fmt: skip
+               series_id: int | None = None, season: int | None = None, episode: int | None = None,
+               status: str = "queued", note: str | None = None) -> bool:  # fmt: skip
         row = self.state.one("SELECT status FROM vod_items WHERE key=?", (key,))
         if row and row["status"] not in ("cancelled", "failed", "deleted"):
+            if row["status"] == "paused" and status == "queued":
+                self._set(key, status="queued", attempts=0, last_error=None)  # a request resumes a partial copy
+                self.wake()
+                return True
             return False
         self.state.execute(
             "INSERT INTO vod_items(key, kind, panel_id, series_id, season, episode, title, ext, target, expected_size, "
-            "bytes_done, status, attempts, last_error, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,0,'queued',0,NULL,?,?) "
-            "ON CONFLICT(key) DO UPDATE SET status='queued', attempts=0, last_error=NULL, target=excluded.target, "
+            "bytes_done, status, attempts, last_error, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,0,?,0,?,?,?) "
+            "ON CONFLICT(key) DO UPDATE SET status=excluded.status, attempts=0, last_error=excluded.last_error, target=excluded.target, "
             "expected_size=excluded.expected_size, updated_at=excluded.updated_at",
-            (key, kind, panel_id, series_id, season, episode, title, ext, str(target), expected, now_iso(), now_iso()),
+            (key, kind, panel_id, series_id, season, episode, title, ext, str(target), expected, status, note, now_iso(), now_iso()),
         )
         self._retry_after.pop(key, None)
         self.wake()
@@ -359,6 +367,106 @@ class VodManager:
             row = self.state.one("SELECT last_modified FROM vod_series WHERE id=?", (sid,))
             self.state.execute("UPDATE vod_follows SET last_modified=? WHERE series_id=?", (row["last_modified"] if row else 0, sid))
         return n
+
+    # ------------------------------------------------------------------ play now (docs/vod.md)
+    def selection(self) -> dict[str, Any] | None:
+        raw = self.state.get("vod.play")
+        return json.loads(raw) if raw else None
+
+    async def play_movie(self, vod_id: int) -> dict[str, Any]:
+        m = await self.movie(vod_id)
+        assert m is not None
+        label = f"{m['title']} ({m['year']})" if m["year"] else m["title"]
+        target = self.root("movie") / movie_relpath(m["title"], m["year"], m["tmdb"], m["ext"])
+        return self._select({"key": f"movie:{vod_id}", "kind": "movie", "panel_id": str(vod_id), "ext": m["ext"],
+                             "title": label, "target": str(target), "expected": m["size"]})  # fmt: skip
+
+    async def play_episode(self, series_id: int, episode_id: str) -> dict[str, Any]:
+        s = await self.series(series_id)
+        assert s is not None
+        for eps in s["seasons"].values():
+            for e in eps:
+                if e["id"] == episode_id:
+                    target = self.root("episode") / episode_relpath(s["title"], s["year"], e["season"], e["episode"], e["ext"], s["tmdb"])
+                    return self._select({
+                        "key": f"ep:{e['id']}", "kind": "episode", "panel_id": e["id"], "ext": e["ext"],
+                        "title": f"{s['title']} S{e['season']:02d}E{e['episode']:02d}", "target": str(target),
+                        "expected": e["size"], "series_id": series_id, "season": e["season"], "episode": e["episode"],
+                    })  # fmt: skip
+        raise ProviderError(f"episode {episode_id} is not on the panel")
+
+    def _select(self, sel: dict[str, Any]) -> dict[str, Any]:
+        """Put ``sel`` on the play channel; a stream already on it switches to the new title."""
+        from ..config import PLAY_CHANNEL_ID
+
+        self.state.set("vod.play", json.dumps(sel))
+        switched = 0
+        for session in list(self.app.pool.in_use.values()):
+            if session.channel.id == PLAY_CHANNEL_ID:
+                session.request_restart()
+                switched += 1
+        log.info("play now", extra={"title": sel["title"], "switched": switched})
+        return {**sel, "switched": switched}
+
+    def playing(self) -> dict[str, Any] | None:
+        from ..config import PLAY_CHANNEL_ID
+
+        sel = self.selection()
+        pc = self.cfg.play_channel
+        if sel is None or pc is None:
+            return None
+        active = any(s.channel.id == PLAY_CHANNEL_ID for s in self.app.pool.in_use.values())
+        return {"key": sel["key"], "title": sel["title"], "channel": pc.guide_number, "channel_name": pc.name, "active": active}
+
+    async def open_play(self, tracker: Any) -> Any:
+        """The relay input for the play channel (unstarted)."""
+        from ..providers.base import OpenedInput
+        from ..relay import FfmpegInput, InputError, build_ffmpeg_args
+        from .play import LocalFileInput, PlayInput, can_pipe
+
+        sel = self.selection()
+        if sel is None:
+            raise InputError("nothing picked: use Play now in Pitlane first")
+        target = Path(sel["target"])
+        row = self.state.one("SELECT status FROM vod_items WHERE key=?", (sel["key"],))
+        if row and row["status"] == "done" and target.exists():
+            log.info("play now: from the library", extra={"title": sel["title"]})
+            return LocalFileInput.for_path(target, tracker)
+        provider = self.provider
+        url = provider.movie_url(int(sel["panel_id"]), sel["ext"]) if sel["kind"] == "movie" else provider.episode_url(sel["panel_id"], sel["ext"])
+        if not can_pipe(sel["ext"]):
+            # MP4 may keep its index at the end: ffmpeg reads the URL itself (with seeks); no copy is kept.
+            return FfmpegInput(build_ffmpeg_args("ts", OpenedInput(url, dict(provider.headers))), tracker)
+        save = self.cfg.play_channel is not None and self.cfg.play_channel.save
+        if save:
+            self._queue(sel["key"], sel["kind"], sel["panel_id"], sel["title"], sel["ext"], target, sel.get("expected"),
+                        sel.get("series_id"), sel.get("season"), sel.get("episode"), status="paused", note="saving while watching")  # fmt: skip
+        item = self.state.one("SELECT * FROM vod_items WHERE key=?", (sel["key"],)) or {"key": sel["key"], "target": str(target)}
+        return PlayInput(self, item, url, dict(provider.headers), tracker, target if save else None)
+
+    def keep_watched(self, item: dict[str, Any], watch: Path | None, received: int, total: int | None, complete: bool) -> None:
+        """After playback: a complete copy goes into the library, a partial one replaces a shorter ``.part``."""
+        from .play import replace_part
+
+        if watch is None or not watch.exists():
+            return
+        key = item["key"]
+        target = Path(item["target"])
+        part = Path(str(target) + ".part")
+        size = watch.stat().st_size
+        if complete and total and size == total and not target.exists():
+            os.replace(watch, target)
+            part.unlink(missing_ok=True)
+            self._set(key, status="done", bytes_done=size, total_size=size, last_error=None)
+            log.info("play now: watched to the end, kept in the library", extra={"title": item.get("title")})
+            self._spawn(self._after_download(key), f"vod-plex-{key}")
+            return
+        replace_part(watch, part)
+        done = part.stat().st_size if part.exists() else 0
+        row = self.state.one("SELECT status FROM vod_items WHERE key=?", (key,))
+        if row and row["status"] not in ("done", "deleted"):
+            note = "partly saved while watching; Resume downloads the rest" if row["status"] == "paused" else None
+            self._set(key, bytes_done=done, total_size=total, last_error=note)
 
     # ------------------------------------------------------------------ queue actions
     def item_action(self, key: str, action: str) -> None:
@@ -492,6 +600,12 @@ class VodManager:
         except ProviderError as e:
             self.blocked = str(e)
             await self._sleep_or_wake(60)
+            return "blocked"
+        held = self.app.connections.held_until(provider.name)
+        if held is not None:
+            until = "until you resume it" if held == float("inf") else "until " + datetime.fromtimestamp(held, self.tz).strftime("%H:%M")
+            self.blocked = f"the IPTV connection is freed for you {until}"
+            await self._sleep_or_wake(30)
             return "blocked"
         lease = await self.app.connections.download_slot(provider.name, slot_timeout)
         if lease is None:
@@ -646,7 +760,13 @@ class VodManager:
         try:
             await plex.scan_folder(str(target.parent))
             params = {} if kind == "movie" else {"season.index": row["season"], "episode.index": row["episode"]}
-            found = await plex.wait_for_file(1 if kind == "movie" else 4, target.name, params, timeout=timeout)
+            type_ = 1 if kind == "movie" else 4
+            found = await plex.wait_for_file(type_, target.name, params, timeout=min(60.0, timeout))
+            if found is None:
+                # Observed with a new library: folder scans are ignored until its first full scan.
+                log.info("plex folder scan found nothing; scanning the whole library", extra={"title": row["title"]})
+                await plex.scan_section()
+                found = await plex.wait_for_file(type_, target.name, params, timeout=timeout)
         except Exception as e:
             log.warning("plex scan after download failed", extra={"title": row["title"], "error": str(e)})
             return

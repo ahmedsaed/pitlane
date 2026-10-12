@@ -316,7 +316,37 @@ class App:
             http_client=self.http.raw,
             probe=lambda src: self.health.probe_source(src, preemptible=False),
             limiter=self.connections,
+            open_vod=self._open_vod,
         )
+
+    async def free_provider(self, provider: str, seconds: float | None) -> dict[str, int]:
+        """Hand the provider's connection back to the operator: end its streams, pause its
+        download, and open nothing new until the hold ends (``None``: until resumed)."""
+        self.connections.hold(provider, seconds)
+        stopped = 0
+        for session in list(self.pool.in_use.values()):
+            if session.current is not None and session.current.provider == provider:
+                session.stop()
+                stopped += 1
+        paused = 0
+        if self.vod and self.vod.current and self.vod.current.get("task") and self.vod.cfg.provider == provider:
+            self.vod.current["task"].cancel()  # back to the queue; resumes after the hold
+            paused = 1
+        log.info("provider connection freed", extra={"provider": provider, "seconds": seconds, "streams": stopped, "downloads": paused})
+        return {"streams": stopped, "downloads": paused}
+
+    def resume_provider(self, provider: str) -> None:
+        self.connections.release_hold(provider)
+        if self.vod:
+            self.vod.wake()
+        log.info("provider connection resumed", extra={"provider": provider})
+
+    async def _open_vod(self, tracker: Any) -> Any:
+        from .relay import InputError
+
+        if self.vod is None:
+            raise InputError("movies and shows are not configured")
+        return await self.vod.open_play(tracker)
 
     def xmltv(self, base_url: str) -> tuple[bytes, str]:
         now = self.clock()

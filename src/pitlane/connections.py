@@ -12,11 +12,14 @@ health probe.
   the health signal (the relay marks failures as they happen).
 - A slot is released only after the old input has fully closed, so failover
   between two sources of the same provider never overlaps connections.
+- A provider can be **held** (the operator wants the account for something
+  else): no stream, probe or download gets a slot until the hold ends.
 """
 
 from __future__ import annotations
 
 import asyncio
+import time
 from collections import Counter
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Literal
@@ -51,6 +54,24 @@ class ConnectionLimiter:
         self._held: dict[str, list[Lease]] = {}
         self._waiting_streams: Counter[str] = Counter()
         self._changed: dict[str, asyncio.Event] = {}
+        self._holds: dict[str, float] = {}  # provider -> wall-clock end (inf = until released)
+
+    # ------------------------------------------------------------------ holds
+    def hold(self, provider: str, seconds: float | None) -> None:
+        """No new connections to ``provider`` for ``seconds`` (``None``: until :meth:`release_hold`)."""
+        self._holds[provider] = float("inf") if seconds is None else time.time() + seconds
+        self._notify(provider)
+
+    def release_hold(self, provider: str) -> None:
+        self._holds.pop(provider, None)
+        self._notify(provider)
+
+    def held_until(self, provider: str) -> float | None:
+        until = self._holds.get(provider)
+        if until is not None and until <= time.time():
+            self._holds.pop(provider, None)
+            return None
+        return until
 
     def configure(self, limits: dict[str, int]) -> None:
         """Apply new limits (config reload). Leases already held stay valid."""
@@ -105,6 +126,8 @@ class ConnectionLimiter:
         for. Slots held by other streams are waited for only with ``wait_for_streams``
         (otherwise ``None`` is returned at once so the caller can try other sources).
         """
+        if self.held_until(provider) is not None:
+            return None
         limit = self.limits.get(provider)
         if limit is None:
             return Lease(None, provider, "stream")
@@ -131,6 +154,9 @@ class ConnectionLimiter:
     async def probe_slot(self, provider: str, *, preemptible: bool = True) -> AsyncIterator[Lease | None]:
         """A slot for one probe, waiting behind other probes. Yields ``None`` (skip the
         probe) while the provider's slots are taken by streams or a stream is waiting."""
+        if self.held_until(provider) is not None:
+            yield None
+            return
         limit = self.limits.get(provider)
         if limit is None:
             yield Lease(None, provider, "probe")
@@ -156,12 +182,12 @@ class ConnectionLimiter:
         preemptible: set ``lease.task`` and a stream that needs the slot cancels it.
         """
         limit = self.limits.get(provider)
-        if limit is None:
-            return Lease(None, provider, "download", preemptible=True)
         loop = asyncio.get_running_loop()
         deadline = loop.time() + max(0.0, timeout)
         while True:
-            if not self._waiting_streams[provider] and self.in_use(provider) < limit:
+            if self.held_until(provider) is None and limit is None:
+                return Lease(None, provider, "download", preemptible=True)
+            if self.held_until(provider) is None and not self._waiting_streams[provider] and self.in_use(provider) < (limit or 0):
                 return self._grant(provider, "download", preemptible=True)
             remaining = deadline - loop.time()
             if remaining <= 0 or not await self._wait_change(provider, remaining):

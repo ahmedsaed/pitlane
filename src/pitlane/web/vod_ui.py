@@ -157,7 +157,7 @@ def vod_router(app: "App") -> APIRouter:
             " Downloads run at about playback speed and only while no live channel is playing.</p>"
         )
         out.append(
-            f"<div data-vod-item='movie:{vod_id}' data-request-url='/vod/request/movie' data-request-id='{vod_id}'>"
+            f"<div data-vod-item='movie:{vod_id}' data-request-url='/vod/request/movie' data-request-id='{vod_id}' data-play='movie={vod_id}'>"
             f"<noscript><form method=post action='/vod/request/movie'><input type=hidden name=id value={vod_id}><button class=primary>Download to Plex</button></form></noscript></div>"
         )
         out.append("</div></div></section>")
@@ -170,6 +170,27 @@ def vod_router(app: "App") -> APIRouter:
                 out.append(f"<tr><td><a href='/vod/movie/{v['id']}'>{escape(v['name'])}</a> {cam}</td><td class=muted>{escape(v['category'] or '')}</td><td class=muted>{added}</td><td><span data-vod-badge='movie:{v['id']}'></span></td></tr>")
             out.append("</table></div></section>")
         return page(app, m["title"], "vod", "".join(out))
+
+    @r.post("/vod/play")
+    async def play(request: Request):
+        """Play now: put a movie (``movie``) or an episode (``series`` + ``episode``) on the play channel."""
+        if err := guard(request, post=True):
+            return err
+        pc = mgr().cfg.play_channel
+        f = await form(request)
+        back = request.headers.get("referer") or "/vod"
+        if pc is None:
+            return done(request, back, "The play channel is turned off (vod.play_channel)", ok=False)
+        try:
+            if f.get("episode"):
+                sel = await mgr().play_episode(int(f.get("series", ["0"])[0]), f["episode"][0])
+            else:
+                sel = await mgr().play_movie(int(f.get("movie", ["0"])[0]))
+        except ProviderError as e:
+            return done(request, back, f"Play failed: {e}", ok=False)
+        if sel["switched"]:
+            return done(request, back, f"Switched channel {pc.guide_number} to {sel['title']}")
+        return done(request, back, f"{sel['title']} is ready on channel {pc.guide_number} ({pc.name}): tune to it in Plex")
 
     @r.post("/vod/request/movie")
     async def request_movie(request: Request):
@@ -218,14 +239,15 @@ def vod_router(app: "App") -> APIRouter:
             f"<span class=small>TMDB ID (if Plex picks the wrong show):</span><input name=tmdb size=9 value='{escape(s['tmdb'] or '', quote=True)}' placeholder='e.g. 247718'><button>Save</button></form></details>"
         )
         out.append("</div></div></section>")
-        out.append(f"<form method=post action='/vod/request/episodes' data-ajax data-after=clear><input type=hidden name=id value={series_id}>")
+        play_gn = mgr().cfg.play_channel.guide_number if mgr().cfg.play_channel else None
+        out.append(f"<form method=post action='/vod/request/episodes' data-ajax data-after=clear><input type=hidden name=id value={series_id}><input type=hidden name=series value={series_id}>")
         for season, eps in s["seasons"].items():
             total = sum(e["size"] or 0 for e in eps)
             out.append(
                 f"<section class=card><h2>Season {season} <span class=sub>{len(eps)} episodes · ≈ {fmt_size(total)}</span>"
                 f"<span style='margin-left:auto' class=row><button type=button data-check-all='{season}'>Select all</button>"
                 f"<button name=season value={season} class=primary>Download season {season}</button></span></h2>"
-                "<div class=scroll><table><tr><th style='width:28px'></th><th>#</th><th>Title</th><th>Length</th><th>Size</th><th>Quality</th><th></th></tr>"
+                "<div class=scroll><table><tr><th style='width:28px'></th><th>#</th><th>Title</th><th>Length</th><th>Size</th><th>Quality</th><th></th>" + ("<th></th>" if play_gn else "") + "</tr>"
             )
             for e in eps:
                 k = f"ep:{e['id']}"
@@ -233,7 +255,9 @@ def vod_router(app: "App") -> APIRouter:
                 out.append(
                     f"<tr><td><input type=checkbox name=ep value='{escape(e['id'], quote=True)}' data-season='{season}' data-vod-check='{escape(k, quote=True)}'></td>"
                     f"<td class=muted>{e['episode']}</td><td>{escape(e['title'])}</td><td class=muted>{fmt_duration(e['duration_s'])}</td>"
-                    f"<td class=muted>{fmt_size(e['size'])}</td><td class=muted>{q}</td><td><span data-vod-badge='{escape(k, quote=True)}'></span></td></tr>"
+                    f"<td class=muted>{fmt_size(e['size'])}</td><td class=muted>{q}</td><td><span data-vod-badge='{escape(k, quote=True)}'></span></td>"
+                    + (f"<td><button formaction='/vod/play' name=episode value='{escape(e['id'], quote=True)}' title='Play on channel {escape(play_gn)}'>▶ Play</button></td>" if play_gn else "")
+                    + "</tr>"
                 )
             out.append("</table></div></section>")
         if s["seasons"]:

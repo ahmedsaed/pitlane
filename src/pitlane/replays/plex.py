@@ -75,6 +75,10 @@ class PlexClient:
         """Targeted scan of one folder only: ``GET /library/sections/{id}/refresh?path=…``."""
         await self._req("GET", f"/library/sections/{self.section_id}/refresh", {"path": folder})
 
+    async def scan_section(self) -> None:
+        """Full scan of the library (a new library ignores folder scans until its first full scan)."""
+        await self._req("GET", f"/library/sections/{self.section_id}/refresh")
+
     @staticmethod
     def _items(doc: dict) -> list[PlexItem]:
         out = []

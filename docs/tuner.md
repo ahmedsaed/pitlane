@@ -116,6 +116,8 @@ A provider with `max_connections: N` holds a lease for every upstream connection
 
 Set `tuners.count` above the provider limit when the account is the only source: with `count: 1`, PMS's overlapping channel-change request would be rejected at the tuner slot before it could wait for the connection.
 
+**Freeing the connection (LIVE-12).** The Overview's "Account connections" card shows what uses each limited provider (a live channel, a download) and has **Free the connection** (for 1 h, 3 h, or until resumed). Pitlane then ends that provider's streams, sends its running download back to the queue (it resumes later), and holds the provider: `acquire_stream`, probes and downloads get no slot, and a tune answers 503 without a warning. **Resume** ends the hold early. Holds live in memory: a restart ends them.
+
 The web UI header shows `<provider> connections N/limit` next to the tuner count for every limited provider (`connections` in `/api/status`). N counts streams, probes and inputs still closing.
 
 ## Health checks off (LIVE-11)

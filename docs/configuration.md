@@ -137,6 +137,10 @@ vod:                                 # docs/vod.md: movies and shows from an xtr
   dry_run_retention: true
   show_adult: false
   notify_ready: true                 # ntfy "Ready to watch" (needs notify.ntfy)
+  play_channel:                      # "Play now" channel (VOD-11); null turns it off
+    guide_number: 900
+    name: Pitlane Cinema
+    save: true                       # keep what is watched (no extra requests)
 ```
 
 ### Notifications (OPS-7)

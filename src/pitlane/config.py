@@ -107,6 +107,7 @@ class ChannelCfg(Strict):
     logo: str | None = None
     series: list[str] = Field(default_factory=list)
     transcode: Literal["720p"] | None = None  # LIVE-8
+    filler_desc: str | None = None  # guide text between programmes (instead of the generic one)
     loop: bool = False  # QA-007; docs/tuner.md: file sources MAY loop "if the channel is set to loop"
 
     @field_validator("id")
@@ -460,6 +461,25 @@ class VodLibraryCfg(Strict):
     section_id: int
 
 
+PLAY_CHANNEL_ID = "pitlane-cinema"
+
+
+class PlayChannelCfg(Strict):
+    """docs/vod.md "Play now": a channel that plays the title picked in Pitlane."""
+
+    guide_number: str = "900"
+    name: str = "Pitlane Cinema"
+    save: bool = True  # keep a copy of what is watched (same bytes, no extra requests)
+
+    @field_validator("guide_number", mode="before")
+    @classmethod
+    def _gn(cls, v: Any) -> str:
+        s = str(v).strip()
+        if isinstance(v, bool) or not re.match(r"^\d+(\.\d+)?$", s):
+            raise ValueError("must be a number or numeric string")
+        return s
+
+
 class VodCfg(Strict):
     """Movies and shows from an Xtream account (docs/vod.md)."""
 
@@ -477,6 +497,7 @@ class VodCfg(Strict):
     dry_run_retention: bool = True
     show_adult: bool = False
     notify_ready: bool = True
+    play_channel: PlayChannelCfg | None = Field(default_factory=PlayChannelCfg)
 
     @field_validator("download_window")
     @classmethod
@@ -676,6 +697,14 @@ def parse_config(raw: Any, *, environ: dict[str, str] | None = None, source_path
         raise ConfigError(errors) from None
 
     cfg.source_path = source_path
+
+    # docs/vod.md "Play now": the play channel is an ordinary channel for the tuner and guide.
+    if cfg.vod is not None and cfg.vod.play_channel is not None:
+        pc = cfg.vod.play_channel
+        cfg.channels.append(ChannelCfg(
+            id=PLAY_CHANNEL_ID, guide_number=pc.guide_number, name=pc.name,
+            filler_desc="Plays the movie or episode you pick with “Play now” in Pitlane. Pick one, then tune here.",
+        ))  # fmt: skip
 
     # Cross-field rules (configuration.md "Validation rules").
     seen_ids: dict[str, int] = {}

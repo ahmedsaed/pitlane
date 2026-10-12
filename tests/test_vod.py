@@ -12,6 +12,7 @@ import pytest
 from fake_xtream import PANEL, PASS, USER, FakePanel, FakePlex, config, make_media, transport
 from pitlane.config import ConfigError, parse_config
 from pitlane.connections import ConnectionLimiter
+from conftest import needs_ffmpeg
 
 MEDIA = make_media()
 
@@ -125,7 +126,7 @@ async def test_catalogue_refresh_search_and_budget(tmp_path, panel):
     app = await make_app(tmp_path, panel)
     try:
         stats = await app.vod.refresh_catalog()
-        assert stats["movies"] == 4 and stats["series"] == 1
+        assert stats["movies"] == 5 and stats["series"] == 1
         assert sum(panel.calls[a] for a in ("get_vod_categories", "get_vod_streams", "get_series_categories", "get_series")) == 4
         assert await app.vod.refresh_catalog() is None  # not due: no requests
         assert sum(panel.calls.values()) == 6  # + the 2 live-list calls at startup
@@ -366,4 +367,204 @@ async def test_pages_render_without_credentials(tmp_path, panel):
             assert USER not in text and PASS not in text
         await client.aclose()
     finally:
+        await app.shutdown()
+
+
+# ------------------------------------------------------------------ play now
+
+
+async def _serve(app):
+    import socket
+
+    import uvicorn
+
+    from pitlane.app import create_app
+
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    server = uvicorn.Server(uvicorn.Config(create_app(app_obj=app, install_signal_handlers=False), host="127.0.0.1", port=port, log_level="warning", lifespan="off"))
+    task = asyncio.get_running_loop().create_task(server.serve())
+    while not server.started:
+        await asyncio.sleep(0.02)
+    return server, task, f"http://127.0.0.1:{port}"
+
+
+def _ts(data: bytes) -> bool:
+    off = data.find(b"\x47")
+    return off >= 0 and all(data[off + k * 188] == 0x47 for k in range(min(20, (len(data) - off) // 188)))
+
+
+@needs_ffmpeg
+async def test_play_now_streams_once_keeps_copy_and_ends(tmp_path, panel):
+    app = await make_app(tmp_path, panel)
+    server, task, base = await _serve(app)
+    try:
+        await app.vod.refresh_catalog()
+        lineup = (await httpx.AsyncClient().get(f"{base}/lineup.json")).json()
+        assert {"GuideNumber": "900", "GuideName": "Pitlane Cinema"}.items() <= next(c for c in lineup if c["GuideNumber"] == "900").items()
+        async with httpx.AsyncClient(timeout=None) as c:
+            assert (await c.get(f"{base}/auto/v900", timeout=10)).status_code == 503  # nothing picked yet
+            await app.vod.play_movie(101)
+            before = len(panel.downloads)
+            data = b""
+            async with c.stream("GET", f"{base}/auto/v900") as resp:
+                assert resp.status_code == 200
+                async for chunk in resp.aiter_raw():
+                    data += chunk  # the stream ends when the title ends (no restart)
+        assert _ts(data) and len(data) > 10_000
+        assert len(panel.downloads) == before + 1 and panel.downloads[-1]["range"] is None  # one connection
+        target = tmp_path / "IPTV Movies" / "Ong Bak 3 (2010) {tmdb-43209}" / "Ong Bak 3 (2010) {tmdb-43209}.mkv"
+        assert target.read_bytes() == MEDIA  # watched to the end: kept, byte-identical
+        assert app.state.one("SELECT status FROM vod_items WHERE key='movie:101'")["status"] == "done"
+        # playing it again comes from the library: no panel request
+        async with httpx.AsyncClient(timeout=None) as c:
+            async with c.stream("GET", f"{base}/auto/v900") as resp:
+                first = await resp.aiter_raw().__anext__()
+        assert _ts(first) and len(panel.downloads) == before + 1
+    finally:
+        server.should_exit = True
+        await task
+        await app.shutdown()
+
+
+@needs_ffmpeg
+async def test_play_now_switches_title_and_keeps_partial_copy(tmp_path, panel):
+    app = await make_app(tmp_path, panel)
+    server, task, base = await _serve(app)
+    try:
+        await app.vod.refresh_catalog()
+        await app.vod.request_movie(105)  # a queued download
+        panel.mode, panel.chunk_delay = "slow", 0.05
+        dl = asyncio.get_running_loop().create_task(app.vod.run_once(slot_timeout=1))
+        while not app.vod.current or not app.vod.current.get("done"):
+            await asyncio.sleep(0.02)
+        await app.vod.play_movie(101)
+        async with httpx.AsyncClient(timeout=None) as c:
+            async with c.stream("GET", f"{base}/auto/v900") as resp:
+                assert resp.status_code == 200
+                assert await asyncio.wait_for(dl, 5) == "preempted"  # live TV first, the download waits
+                it = resp.aiter_raw()
+                got = await it.__anext__()
+                sel = await app.vod.play_movie(105)  # pick another title while watching
+                assert sel["switched"] == 1
+                for _ in range(200):
+                    got += await it.__anext__()
+                    if any(d["path"].endswith("/105.mkv") and d["range"] is None for d in panel.downloads[1:]):
+                        break
+                assert _ts(got)
+        await asyncio.sleep(0.3)
+        assert [d["path"] for d in panel.downloads][-2:] == ["/movie/…/101.mkv", "/movie/…/105.mkv"]
+        row = app.state.one("SELECT * FROM vod_items WHERE key='movie:101'")
+        assert row["status"] == "paused" and row["bytes_done"] > 0 and "partly saved" in row["last_error"]
+        assert Path(row["target"] + ".part").stat().st_size == row["bytes_done"]
+        assert app.connections.in_use("iptv") == 0
+    finally:
+        server.should_exit = True
+        await task
+        await app.shutdown()
+
+
+async def test_unscanned_download_is_scanned_after_restart(tmp_path, panel):
+    app = await make_app(tmp_path, panel)
+    try:
+        await app.vod.refresh_catalog()
+        await app.vod.request_movie(101)
+        target = Path(app.state.one("SELECT target FROM vod_items")["target"])
+        target.parent.mkdir(parents=True)
+        target.write_bytes(MEDIA)
+        app.state.execute("UPDATE vod_items SET status='done'")  # finished, but the Plex step never ran
+        await app.vod.stop()
+        await app.vod.start(background=True)
+        for _ in range(100):
+            if app.state.one("SELECT match_state FROM vod_items")["match_state"]:
+                break
+            await asyncio.sleep(0.05)
+        assert app.state.one("SELECT match_state FROM vod_items")["match_state"] == "matched"
+        assert app.fake_plex.scans == [(6, str(target.parent))]
+    finally:
+        await app.shutdown()
+
+
+async def test_new_library_gets_a_full_scan_when_folder_scan_misses(tmp_path, panel):
+    app = await make_app(tmp_path, panel)
+    try:
+        app.fake_plex.ignore_folder_scans = True
+        await app.vod.refresh_catalog()
+        await app.vod.request_movie(101)
+        target = Path(app.state.one("SELECT target FROM vod_items")["target"])
+        target.parent.mkdir(parents=True)
+        target.write_bytes(MEDIA)
+        app.state.execute("UPDATE vod_items SET status='done'")
+        import pitlane.vod.manager as mm
+
+        orig = mm.PlexClient.wait_for_file
+
+        async def quick(self, *a, timeout=300.0, **k):
+            return await orig(self, *a, timeout=min(timeout, 1.0), first_delay=0.1, **k)
+
+        mm.PlexClient.wait_for_file = quick
+        try:
+            await app.vod._after_download("movie:101", timeout=3)
+        finally:
+            mm.PlexClient.wait_for_file = orig
+        assert app.fake_plex.scans == [(6, str(target.parent)), (6, "")]
+        assert app.state.one("SELECT match_state FROM vod_items")["match_state"] == "matched"
+    finally:
+        await app.shutdown()
+
+
+async def test_limiter_hold():
+    lim = ConnectionLimiter({"iptv": 1})
+    lim.hold("iptv", None)
+    assert await lim.acquire_stream("iptv", 1, wait_for_streams=True) is None
+    assert await lim.download_slot("iptv", 0.1) is None
+    async with lim.probe_slot("iptv") as p:
+        assert p is None
+    assert lim.held_until("iptv") == float("inf")
+    lim.release_hold("iptv")
+    assert (await lim.acquire_stream("iptv", 1, wait_for_streams=False)) is not None
+    lim2 = ConnectionLimiter({"iptv": 1})
+    lim2.hold("iptv", -1)  # already over
+    assert lim2.held_until("iptv") is None
+
+
+@needs_ffmpeg
+async def test_free_connection_stops_stream_and_download(tmp_path, panel):
+    app = await make_app(tmp_path, panel)
+    server, task, base = await _serve(app)
+    try:
+        await app.vod.refresh_catalog()
+        await app.vod.request_movie(105)
+        panel.mode, panel.chunk_delay = "slow", 0.05
+        dl = asyncio.get_running_loop().create_task(app.vod.run_once(slot_timeout=1))
+        while not app.vod.current or not app.vod.current.get("done"):
+            await asyncio.sleep(0.02)
+        res = await app.free_provider("iptv", None)
+        assert res == {"streams": 0, "downloads": 1}
+        assert await asyncio.wait_for(dl, 5) == "preempted"
+        assert await app.vod.run_once() == "blocked" and "freed for you until you resume" in app.vod.blocked
+        async with httpx.AsyncClient(timeout=10) as c:
+            assert (await c.get(f"{base}/auto/v900")).status_code == 503  # nothing opens while held
+            st = (await c.get(f"{base}/api/state")).json()
+            assert st["connections"]["iptv"]["held"] == -1
+        app.resume_provider("iptv")
+        # a running stream is ended by a hold
+        await app.vod.play_movie(101)
+        async with httpx.AsyncClient(timeout=None) as c:
+            async with c.stream("GET", f"{base}/auto/v900") as resp:
+                it = resp.aiter_raw()
+                await it.__anext__()
+                res = await app.free_provider("iptv", 3600)
+                assert res["streams"] == 1
+                rest = b"".join([b async for b in it])  # the response ends
+        assert app.connections.held_until("iptv") is not None
+        for _ in range(50):
+            if app.connections.in_use("iptv") == 0:
+                break
+            await asyncio.sleep(0.05)
+        assert app.connections.in_use("iptv") == 0 and isinstance(rest, bytes)
+    finally:
+        server.should_exit = True
+        await task
         await app.shutdown()

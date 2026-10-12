@@ -31,6 +31,7 @@ from .base import BaseProvider, OpenedInput, ProviderError, SourceKind, SourceSp
 
 _URL_PATH = re.compile(r"(\bhttps?://[^/\s\"']+)/[^\s\"']*", re.IGNORECASE)
 LIVE_CACHE = "live.json"
+PLAY_LOCATOR = "play"  # the "Play now" channel's source; opened by pitlane.vod.play
 
 
 def _clean(text: str) -> str:
@@ -96,6 +97,7 @@ class XtreamProvider(BaseProvider):
         self.entries: dict[str, LiveEntry] = {}
         self.fetched_at: float | None = None
         self.requests = 0  # panel requests made by this instance (tests, metrics)
+        self.play_channel: str | None = None  # set by the registry when vod.play_channel is on
         self._lock = asyncio.Lock()
 
     async def start(self, cfg: Any, ctx: Any) -> None:
@@ -174,6 +176,8 @@ class XtreamProvider(BaseProvider):
         if not self.entries:
             await self.refresh(force=True)
         out: list[SourceSpec] = []
+        if self.play_channel:
+            out.append(SourceSpec(channel=self.play_channel, locator=PLAY_LOCATOR, kind="vod", label="Play now", priority=0))
         for loc, e in self.entries.items():
             fields = {"tvg-id": f"xc.{e.stream_id}", "name": e.name, "group-title": e.category}
             for rule in self.cfg.map:
@@ -190,9 +194,18 @@ class XtreamProvider(BaseProvider):
         return out
 
     def kind_of(self, locator: str) -> SourceKind:
+        if locator == PLAY_LOCATOR:
+            return "vod"
         if locator not in self.entries:
             raise ProviderError("unknown locator")
         return "ts"
+
+    async def probe(self, locator: str) -> Any:
+        if locator == PLAY_LOCATOR:  # nothing to check until a title is picked
+            from .base import ProbeResult
+
+            return ProbeResult("online", None, None)
+        return await super().probe(locator)
 
     async def open(self, locator: str) -> OpenedInput:
         e = self.entries.get(locator)

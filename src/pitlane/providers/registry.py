@@ -140,6 +140,11 @@ class ProviderRegistry:
                 if not getattr(inst, "name", None):
                     inst.name = pcfg.name
                 await inst.start(pcfg, self._ctx(pcfg))
+                vod = self.cfg.vod
+                if vod is not None and vod.play_channel is not None and vod.provider == pcfg.name and hasattr(inst, "play_channel"):
+                    from ..config import PLAY_CHANNEL_ID
+
+                    inst.play_channel = PLAY_CHANNEL_ID
                 self.providers[pcfg.name] = inst
             except Exception as e:
                 self.errors[pcfg.name] = str(e)
