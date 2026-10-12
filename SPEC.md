@@ -29,7 +29,7 @@ Pitlane is a single long-running service that connects operator-configured motor
 ### 2.1 Providers (PROV)
 
 - **PROV-1** Pitlane MUST define a provider interface with two capabilities, `live` and `replay`. A provider MAY implement either or both (contract: `docs/providers.md`).
-- **PROV-2** Pitlane MUST ship these generic providers: `m3u` (local file or URL), `channel-json` (the JSON schema in `docs/providers.md`), `directory` (local folder of media files), and `hdhomerun` (passthrough of a real HDHomeRun device).
+- **PROV-2** Pitlane MUST ship these generic providers: `m3u` (local file or URL), `channel-json` (the JSON schema in `docs/providers.md`), `directory` (local folder of media files), `hdhomerun` (passthrough of a real HDHomeRun device), and `xtream` (an Xtream Codes panel's `player_api.php`, live and VOD).
 - **PROV-3** Providers MUST be enabled and configured only through the configuration file. No provider is enabled by default.
 - **PROV-4** Provider fetches MUST use configurable timeouts, retry with exponential backoff, and per-host rate limits.
 - **PROV-5** Pitlane MUST NOT execute code obtained from a provider (no `eval` of remote JavaScript, no downloaded plugins).
@@ -70,7 +70,22 @@ Pitlane is a single long-running service that connects operator-configured motor
 - **REP-7** Supplementary items (build-up, analysis, shows) MUST be stored either as episodes numbered after the core sessions or as extras. The operator chooses which (default: episodes, see `docs/replays.md`).
 - **REP-8** Retention: Pitlane MAY delete library items older than N seasons per session type (e.g. keep races forever, drop FP after 1 season). It is off by default and MUST support dry-run.
 
-### 2.5 Interface and operations (OPS)
+### 2.5 Movies and shows (VOD)
+
+Design: `docs/vod.md`.
+
+- **VOD-1** An `xtream` provider MAY declare a `vod` capability. Pitlane MUST then keep a local copy of the movie and series catalogue, refreshed at most once per `vod.catalog_refresh` (default 24 h), and nothing else from the panel unless the operator acts on a title.
+- **VOD-2** The web UI MUST let the operator search and browse the catalogue (by title, category, recently added) and request a movie, single episodes, whole seasons, or a whole series. It MUST offer to follow a series so new episodes are requested automatically.
+- **VOD-3** Requesting a title MUST fetch its details once (`get_vod_info` / `get_series_info`) and cache them. Browsing MUST NOT fetch details for titles the operator does not open.
+- **VOD-4** Downloads MUST share the provider's connection limit (LIVE-10) at the lowest priority: they start only while a slot is free, and a live tune preempts a running download, which later resumes where it stopped.
+- **VOD-5** Downloads MUST be byte copies of the panel's file (no remux), written next to the target as `.part`, resumable with HTTP `Range` when the panel supports it, and moved into the library only when complete.
+- **VOD-6** The operator MAY limit downloads to a daily time window, a maximum transfer rate, and a daily and a monthly data cap. Pitlane MUST NOT start a download that would leave less than `vod.min_free_space` on the target disk.
+- **VOD-7** Files MUST be named for exact Plex matching: movies `{Title} ({Year}) {tmdb-ID}/{Title} ({Year}) {tmdb-ID}.{ext}`, episodes `{Show} ({Year})/Season NN/{Show} ({Year}) - SNNENN.{ext}`. After a move, Pitlane MUST trigger a targeted scan of that folder only (as REP-5).
+- **VOD-8** After the scan, Pitlane MUST check the item's Plex match. An item that Plex did not match to an online agent MUST be listed in the UI with a link to Plex's "Fix Match".
+- **VOD-9** Retention MAY delete a downloaded movie or episode a configured number of days after Plex reports it watched (`viewCount > 0`). It is off by default and MUST support dry-run.
+- **VOD-10** Panel credentials MUST NOT appear in logs, the UI, notifications, or file names (OPS-4, OPS-7). Adult-flagged titles MUST be hidden unless `vod.show_adult: true`.
+
+### 2.6 Interface and operations (OPS)
 
 - **OPS-1** Pitlane MUST serve a small web UI with: channel and source health, current streams, guide preview, replay queue, `needs-review` items (with a manual "assign to session" action), and a "reload config" button.
 - **OPS-2** Pitlane MUST expose `/healthz` (liveness) and `/metrics` (Prometheus text format).

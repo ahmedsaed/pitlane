@@ -221,6 +221,32 @@ class HdhomerunProviderCfg(ProviderBase):
         return self
 
 
+class XtreamProviderCfg(ProviderBase):
+    """Xtream Codes panel via ``player_api.php`` (docs/providers.md "xtream", docs/vod.md)."""
+
+    type: Literal["xtream"]
+    url: str
+    username: str
+    password: str
+    refresh: Duration = timedelta(hours=24)
+    map: list[MapRule] = Field(default_factory=list)
+    vod: bool = False  # VOD-1: keep the movie and series catalogue
+    user_agent: str = "VLC/3.0.20"
+
+    @model_validator(mode="after")
+    def _check(self) -> "XtreamProviderCfg":
+        if not self.url.startswith(("http://", "https://")):
+            raise ValueError("url: must start with http:// or https://")
+        allowed = {"tvg-id", "name", "group-title"}
+        for i, rule in enumerate(self.map):
+            bad = set(rule.match) - allowed
+            if bad:
+                raise ValueError(f"map[{i}].match: unknown key(s) {sorted(bad)}; allowed: {sorted(allowed)}")
+        if self.refresh < timedelta(hours=1):
+            raise ValueError("refresh: at least 1h (every refresh is a round of panel requests)")
+        return self
+
+
 class PluginProviderCfg(BaseModel):
     """Plugin providers get their raw config; the plugin validates the rest (PROV-6)."""
 
@@ -237,6 +263,7 @@ PROVIDER_MODELS: dict[str, type[BaseModel]] = {
     "channel-json": ChannelJsonProviderCfg,
     "directory": DirectoryProviderCfg,
     "hdhomerun": HdhomerunProviderCfg,
+    "xtream": XtreamProviderCfg,
 }
 
 
@@ -409,6 +436,63 @@ class NotifyCfg(Strict):
     ntfy: NtfyCfg | None = None
 
 
+_SIZE_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*(B|KB|MB|GB|TB)?\s*$", re.IGNORECASE)
+_SIZE_UNITS = {"B": 1, "KB": 1000, "MB": 1000**2, "GB": 1000**3, "TB": 1000**4}
+
+
+def parse_size(v: Any) -> int:
+    """``50GB``, ``4MB``, ``1.5 TB`` or a plain number of bytes."""
+    if isinstance(v, bool):
+        raise ValueError("expected a size like 50GB")
+    if isinstance(v, (int, float)):
+        return int(v)
+    m = _SIZE_RE.match(str(v))
+    if not m:
+        raise ValueError(f'"{v}" is not a size (e.g. 50GB, 4MB)')
+    return int(float(m.group(1)) * _SIZE_UNITS[(m.group(2) or "B").upper()])
+
+
+Size = Annotated[int, BeforeValidator(parse_size)]
+
+
+class VodLibraryCfg(Strict):
+    root: str
+    section_id: int
+
+
+class VodCfg(Strict):
+    """Movies and shows from an Xtream account (docs/vod.md)."""
+
+    provider: str
+    movies: VodLibraryCfg
+    shows: VodLibraryCfg
+    catalog_refresh: Duration = timedelta(hours=24)
+    download_window: str | None = None  # VOD-6, local time (epg.timezone)
+    max_rate: Size | None = None  # bytes per second
+    max_gb_per_day: float | None = Field(None, gt=0)
+    max_gb_per_month: float | None = Field(None, gt=0)
+    min_free_space: Size = 50 * 1000**3
+    quiet_around_sessions: Duration = timedelta(minutes=30)
+    delete_after_watched: Duration | None = None  # VOD-9
+    dry_run_retention: bool = True
+    show_adult: bool = False
+    notify_ready: bool = True
+
+    @field_validator("download_window")
+    @classmethod
+    def _win(cls, v: str | None) -> str | None:
+        if v is not None and not re.match(r"^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$", v):
+            raise ValueError('must look like "01:00-07:00"')
+        return v
+
+    @field_validator("catalog_refresh")
+    @classmethod
+    def _refresh(cls, v: timedelta) -> timedelta:
+        if v < timedelta(hours=1):
+            raise ValueError("at least 1h (every refresh is a round of panel requests)")
+        return v
+
+
 class Config(Strict):
     server: ServerCfg = Field(default_factory=ServerCfg)
     tuners: TunersCfg = Field(default_factory=TunersCfg)
@@ -423,6 +507,7 @@ class Config(Strict):
     retention: RetentionCfg = Field(default_factory=RetentionCfg)
     plugins: PluginsCfg = Field(default_factory=PluginsCfg)
     notify: NotifyCfg = Field(default_factory=NotifyCfg)
+    vod: VodCfg | None = None
 
     # Filled by load_config, not by YAML.
     provider_cfgs: list[Any] = Field(default_factory=list, exclude=True)
@@ -632,12 +717,28 @@ def parse_config(raw: Any, *, environ: dict[str, str] | None = None, source_path
             continue
         if pc.name in seen_names:
             errors.append(f'{prefix}.name: duplicate "{pc.name}"')
+        if ptype == "xtream":
+            # OPS-4: panel credentials end up in stream URLs; keep them out of the file.
+            for key in ("username", "password"):
+                if f"{prefix}.{key}" not in resolver.secret_form_paths:
+                    errors.append(f"{prefix}.{key}: secrets must be given as ${{ENV_VAR}} or ${{file:/path}}, not inline")
         seen_names.add(pc.name)
         for j, rule in enumerate(getattr(pc, "map", []) or []):
             if rule.channel not in seen_ids:
                 errors.append(f'{prefix}.map[{j}].channel: unknown channel "{rule.channel}"')
         provider_cfgs.append(pc)
     cfg.provider_cfgs = provider_cfgs
+
+    if cfg.vod is not None:
+        vp = next((p for p in provider_cfgs if p.name == cfg.vod.provider), None)
+        if vp is None:
+            errors.append(f'vod.provider: unknown provider "{cfg.vod.provider}"')
+        elif getattr(vp, "type", None) != "xtream" or not getattr(vp, "vod", False):
+            errors.append(f'vod.provider: "{cfg.vod.provider}" must be an xtream provider with vod: true')
+        if not cfg.plex.url or not cfg.plex.token:
+            errors.append("plex.url and plex.token: required when vod is set")
+        if cfg.vod.movies.root == cfg.vod.shows.root:
+            errors.append("vod.shows.root: must differ from vod.movies.root")
 
     for i, m in enumerate(cfg.epg.manual):
         if m.channel not in seen_ids:

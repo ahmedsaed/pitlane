@@ -145,6 +145,29 @@ Passes through a real HDHomeRun on the LAN (for example free-to-air broadcasts).
       priority: 20
 ```
 
+### `xtream` (live, VOD)
+
+Talks to an Xtream Codes panel's `player_api.php` directly, so no playlist file is needed. One provider holds one account: live streams and VOD downloads (`docs/vod.md`) share its `max_connections`.
+
+```yaml
+- type: xtream
+  name: iptv
+  url: http://panel.example.invalid:80
+  username: ${file:/secrets/iptv_username}   # required as ${ENV} or ${file:} (OPS-4)
+  password: ${file:/secrets/iptv_password}
+  max_connections: 1
+  health_checks: false
+  refresh: 24h                                # live list; at least 1h
+  user_agent: VLC/3.0.20                      # sent to the panel and to stream URLs
+  vod: true                                   # keep the movie/series catalogue (docs/vod.md)
+  map:
+    - { match: { name: "^Sky Sports F1 \\[UK\\]$" }, channel: f1-main, priority: 10 }
+```
+
+- **Live list:** `get_live_categories` + `get_live_streams`, 2 requests per `refresh`. The answer is cached in the provider's cache directory, so restarts and config reloads cost no requests; a failed refresh keeps the previous list.
+- **Map rules** match `name` (the stream name, trimmed), `group-title` (its category) and `tvg-id` (`xc.{stream_id}`), as for `m3u`.
+- **Locators** are `live:{stream_id}` and carry no credentials. The stream URL (`/live/{user}/{pass}/{id}.ts`) is built only when a stream opens; errors are logged with hosts only.
+
 ## Plugin providers (PROV-6)
 
 Plugins are Python modules in `<config_dir>/plugins/*.py` that expose `PROVIDER_TYPE: str` and a class implementing the interface. They load at start and on config reload, run in-process with the same `ProviderContext`, and are subject to the same rules. Pitlane does not distribute plugins and never downloads them.

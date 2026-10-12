@@ -108,6 +108,21 @@ plugins:
   dir: /config/plugins
   enabled: []                        # plugin PROVIDER_TYPE names to allow
 
+# Movies and shows from an Xtream account (docs/vod.md). Needs an xtream provider
+# with vod: true, e.g.:
+#   - type: xtream
+#     name: iptv
+#     url: http://panel.example.invalid:80
+#     username: ${file:/config/iptv_username}
+#     password: ${file:/config/iptv_password}
+#     max_connections: 1
+#     health_checks: false
+#     vod: true
+# vod:
+#   provider: iptv
+#   movies: { root: /iptv-movies, section_id: 6 }
+#   shows:  { root: /iptv-shows,  section_id: 7 }
+
 notify:                              # OPS-7: optional push notifications
   ntfy:
     url: https://ntfy.example.invalid

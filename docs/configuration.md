@@ -121,11 +121,31 @@ notify:                              # OPS-7: optional push notifications
     password: ${file:/config/ntfy_password}
     level: warning                     # warning | error
     throttle: 30m                      # same message for the same channel/source/file at most once per window
+
+vod:                                 # docs/vod.md: movies and shows from an xtream provider
+  provider: iptv                     # an xtream provider with vod: true
+  movies: { root: /iptv-movies, section_id: 6 }   # same path inside the Plex container
+  shows:  { root: /iptv-shows,  section_id: 7 }
+  catalog_refresh: 24h               # 4 bulk requests per refresh; at least 1h
+  download_window: null              # e.g. "01:00-08:00", local time (epg.timezone)
+  max_rate: null                     # e.g. 4MB (per second)
+  max_gb_per_day: null
+  max_gb_per_month: null
+  min_free_space: 50GB
+  quiet_around_sessions: 30m         # no downloads from 30 min before an F1 session to its end
+  delete_after_watched: null         # e.g. 14d (VOD-9)
+  dry_run_retention: true
+  show_adult: false
+  notify_ready: true                 # ntfy "Ready to watch" (needs notify.ntfy)
 ```
 
 ### Notifications (OPS-7)
 
 With `notify.ntfy` set, every `pitlane.*` log record at or above `level` is also published to `<url>` as JSON (`topic`, `title`, `message`, `priority`, `tags`): warnings at priority 3, errors at 4. The title is the log message and the body lists its fields (channel, source, error, …). Sending runs in the background with one retry for network and 5xx errors; a failed send is logged and never re-forwarded. Secrets and URL paths are removed from every message (`http://panel.example:80/…`), so IPTV credentials embedded in stream URLs are never sent. A message held back by `throttle` is counted, and the next one that goes out says how many were held.
+
+### Movies and shows (VOD)
+
+See `docs/vod.md`. `vod.provider` must name an `xtream` provider with `vod: true`, and `plex.url` and `plex.token` are required. Both library roots must be mounted at the same path in the Pitlane and Plex containers, because Pitlane asks Plex to scan the folder it wrote. Sizes accept `B`, `KB`, `MB`, `GB` and `TB` (powers of 1000).
 
 ## Validation rules
 

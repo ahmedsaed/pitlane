@@ -52,6 +52,15 @@ Because every session shares the series title and has unique S/E numbers, this o
 
 Set `plex.spoiler_user` to the Plex user whose watch state controls result reveal. For a managed or home user, give Pitlane that user's token through `PITLANE_SPOILER_TOKEN_FILE`.
 
+## 6. Optional: movies and shows from an IPTV account
+
+See `docs/vod.md`.
+
+1. Mount two folders at the **same container paths** in Pitlane and Plex, e.g. `~/Media/IPTV Movies` → `/iptv-movies` and `~/Media/IPTV Shows` → `/iptv-shows`.
+2. Create a **Movies** library "IPTV Movies" on `/iptv-movies` (agent: Plex Movie) and a **TV Shows** library "IPTV Shows" on `/iptv-shows` (agent: Plex TV Series). Unlike the F1 library, these use the online agents: the file names carry the year and, for movies, a `{tmdb-…}` ID, so Plex matches them exactly.
+3. Put both section IDs in `vod.movies.section_id` and `vod.shows.section_id`.
+4. Titles Plex could not match are listed on Pitlane's Downloads page with a link to the item in Plex, where "Fix Match" corrects them.
+
 ## Troubleshooting
 
 | Symptom | Check |

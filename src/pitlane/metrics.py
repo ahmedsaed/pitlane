@@ -26,6 +26,7 @@ class Metrics:
         self.replay_filed = Counter("pitlane_replays_filed_total", "Files placed into the library", registry=r)
         self.replay_review = Counter("pitlane_replays_needs_review_total", "Files sent to needs-review", registry=r)
         self.ffmpeg_running = Gauge("pitlane_ffmpeg_processes", "Running ffmpeg child processes", registry=r)
+        self.vod_bytes = Counter("pitlane_vod_bytes_total", "Bytes downloaded for movies and shows", registry=r)
 
     def render(self) -> bytes:
         return generate_latest(self.registry)

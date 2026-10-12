@@ -85,6 +85,7 @@ class App:
         self.pool = TunerPool(cfg.tuners.count)
         self.connections = ConnectionLimiter(cfg.connection_limits())
         self.replays: Any = None
+        self.vod: Any = None
         self.jolpica: JolpicaClient = None  # type: ignore[assignment]
         self.reload_error: list[str] | None = None
         self.notifier: Any = None
@@ -118,6 +119,7 @@ class App:
 
             self.replays = ReplayPipeline(self)
             await self.replays.start(background=self.start_background)
+        await self._start_vod()
         if self.start_background:
             self.health.start()
             self._spawn(self._calendar_loop(), "calendar")
@@ -137,6 +139,8 @@ class App:
             await self.health.stop()
         if self.replays:
             await self.replays.stop()
+        if self.vod:
+            await self.vod.stop()
         await self.tracker.kill_all()  # LIVE-9: never leave ffmpeg behind
         if self.registry:
             await self.registry.stop()
@@ -159,6 +163,15 @@ class App:
             logging.getLogger().removeHandler(self.notifier)
             notifier, self.notifier = self.notifier, None
             await notifier.stop()
+
+    async def _start_vod(self) -> None:
+        """docs/vod.md: movies and shows, when ``vod`` is configured."""
+        if self.cfg.vod is None or self.vod is not None:
+            return
+        from .vod.manager import VodManager
+
+        self.vod = VodManager(self)
+        await self.vod.start(background=self.start_background)
 
     def _spawn(self, coro: Any, name: str) -> None:
         self._tasks.append(asyncio.get_running_loop().create_task(coro, name=name))
@@ -271,6 +284,13 @@ class App:
                 await old_registry.stop()
             if self.replays:
                 self.replays.reconfigure()
+            if self.vod and new.vod is None:
+                await self.vod.stop()
+                self.vod = None
+            elif self.vod:
+                self.vod.wake()  # reads app.cfg.vod and the new registry on its next pass
+            else:
+                await self._start_vod()
             self.health.wake()
             self._xmltv_cache = None
             log.info("config reloaded")
@@ -374,6 +394,8 @@ def create_app(
         return FileResponse(p)
 
     from .web.ui import ui_router
+    from .web.vod_ui import vod_router
 
     api.include_router(ui_router(pl))
+    api.include_router(vod_router(pl))
     return api

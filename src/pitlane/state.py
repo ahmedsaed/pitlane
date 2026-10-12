@@ -32,6 +32,30 @@ CREATE TABLE IF NOT EXISTS review_items (
     path TEXT PRIMARY KEY, reason TEXT, candidates TEXT, detected_at TEXT, resolved_session_id TEXT, sha256 TEXT);
 CREATE TABLE IF NOT EXISTS inbox_seen (path TEXT PRIMARY KEY, size INTEGER, mtime REAL, outcome TEXT, at TEXT);
 CREATE TABLE IF NOT EXISTS assignments (sha256 TEXT PRIMARY KEY, session_id TEXT NOT NULL, title TEXT, created_at TEXT);
+-- docs/vod.md §4
+CREATE TABLE IF NOT EXISTS vod_titles (
+    id INTEGER PRIMARY KEY, name TEXT, norm TEXT, year INTEGER, category TEXT, rating REAL, poster TEXT,
+    added INTEGER, ext TEXT, cam INTEGER DEFAULT 0, adult INTEGER DEFAULT 0);
+CREATE INDEX IF NOT EXISTS vod_titles_norm ON vod_titles(norm, year);
+CREATE INDEX IF NOT EXISTS vod_titles_added ON vod_titles(added);
+CREATE TABLE IF NOT EXISTS vod_series (
+    id INTEGER PRIMARY KEY, name TEXT, norm TEXT, year INTEGER, category TEXT, rating REAL, poster TEXT,
+    plot TEXT, genre TEXT, last_modified INTEGER);
+CREATE INDEX IF NOT EXISTS vod_series_modified ON vod_series(last_modified);
+CREATE TABLE IF NOT EXISTS vod_details (kind TEXT, id INTEGER, doc TEXT, fetched_at TEXT, PRIMARY KEY(kind, id));
+CREATE TABLE IF NOT EXISTS vod_follows (series_id INTEGER PRIMARY KEY, from_season INTEGER, last_modified INTEGER, created_at TEXT);
+CREATE TABLE IF NOT EXISTS vod_series_ids (series_id INTEGER PRIMARY KEY, tmdb TEXT);
+CREATE TABLE IF NOT EXISTS vod_items (
+    key TEXT PRIMARY KEY, kind TEXT, panel_id TEXT, series_id INTEGER, season INTEGER, episode INTEGER,
+    title TEXT, ext TEXT, target TEXT, expected_size INTEGER, total_size INTEGER, bytes_done INTEGER DEFAULT 0,
+    status TEXT, attempts INTEGER DEFAULT 0, last_error TEXT, plex_rating_key TEXT, match_state TEXT,
+    watched_at TEXT, created_at TEXT, updated_at TEXT);
+CREATE INDEX IF NOT EXISTS vod_items_status ON vod_items(status, created_at);
+CREATE TABLE IF NOT EXISTS vod_usage (day TEXT PRIMARY KEY, bytes INTEGER DEFAULT 0);
+"""
+
+FTS = """
+CREATE VIRTUAL TABLE IF NOT EXISTS vod_search USING fts5(kind UNINDEXED, id UNINDEXED, name, tokenize='unicode61 remove_diacritics 2');
 """
 
 
@@ -50,6 +74,27 @@ class State:
         with self._lock:
             self._db.execute("PRAGMA journal_mode=WAL")
             self._db.executescript(SCHEMA)
+            try:
+                self._db.executescript(FTS)
+                self.fts = True
+            except sqlite3.OperationalError:  # SQLite built without FTS5: search falls back to LIKE
+                self.fts = False
+
+    def transaction(self, statements: Iterable[tuple[str, Iterable[Any]]]) -> None:
+        """Run statements atomically (VOD catalogue swaps)."""
+        with self._lock:
+            self._db.execute("BEGIN")
+            try:
+                for sql, params in statements:
+                    self._db.execute(sql, tuple(params))
+            except Exception:
+                self._db.execute("ROLLBACK")
+                raise
+            self._db.execute("COMMIT")
+
+    def executemany(self, sql: str, rows: Iterable[Iterable[Any]]) -> None:
+        with self._lock:
+            self._db.executemany(sql, [tuple(r) for r in rows])
 
     def close(self) -> None:
         with self._lock:

@@ -5,8 +5,9 @@ or kicks the first off. A provider with ``max_connections`` set gets a lease for
 every upstream connection Pitlane opens to it: one per stream input and one per
 health probe.
 
-- Streams win over probes: a stream that needs a slot cancels running health
-  probes on that provider and waits for them to let go.
+- Streams win over probes and downloads: a stream that needs a slot cancels
+  running health probes and VOD downloads (VOD-4) on that provider and waits
+  for them to let go. A cancelled download resumes later.
 - A provider whose slots are all streaming is never probed; the live stream is
   the health signal (the relay marks failures as they happen).
 - A slot is released only after the old input has fully closed, so failover
@@ -20,7 +21,7 @@ from collections import Counter
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Literal
 
-LeaseKind = Literal["stream", "probe", "closing"]
+LeaseKind = Literal["stream", "probe", "download", "closing"]
 
 
 class Lease:
@@ -65,6 +66,13 @@ class ConnectionLimiter:
 
     def _streams(self, provider: str) -> int:
         return sum(1 for lease in self._held.get(provider, []) if lease.kind == "stream")
+
+    def _busy(self, provider: str) -> int:
+        """Slots a probe must not wait for: streams and downloads (a download can run for hours)."""
+        return sum(1 for lease in self._held.get(provider, []) if lease.kind in ("stream", "download"))
+
+    def streams_waiting(self, provider: str) -> bool:
+        return bool(self._waiting_streams[provider])
 
     def _notify(self, provider: str) -> None:
         ev = self._changed.pop(provider, None)
@@ -111,7 +119,7 @@ class ConnectionLimiter:
                 if self._streams(provider) >= limit and not wait_for_streams:
                     return None
                 for lease in held:
-                    if lease.kind == "probe" and lease.preemptible and lease.task is not None:
+                    if lease.kind in ("probe", "download") and lease.preemptible and lease.task is not None:
                         lease.task.cancel()
                 remaining = deadline - loop.time()
                 if remaining <= 0 or not await self._wait_change(provider, remaining):
@@ -129,7 +137,7 @@ class ConnectionLimiter:
             return
         lease: Lease | None = None
         while lease is None:
-            if self._waiting_streams[provider] or self._streams(provider) >= limit:
+            if self._waiting_streams[provider] or self._busy(provider) >= limit:
                 break
             if self.in_use(provider) < limit:
                 lease = self._grant(provider, "probe", preemptible)
@@ -140,3 +148,21 @@ class ConnectionLimiter:
         finally:
             if lease is not None:
                 lease.release()
+
+    async def download_slot(self, provider: str, timeout: float) -> Lease | None:
+        """A slot for a VOD download (VOD-4), or ``None`` if none came free within ``timeout``.
+
+        Never waits ahead of a stream and never cancels anything. The lease is
+        preemptible: set ``lease.task`` and a stream that needs the slot cancels it.
+        """
+        limit = self.limits.get(provider)
+        if limit is None:
+            return Lease(None, provider, "download", preemptible=True)
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + max(0.0, timeout)
+        while True:
+            if not self._waiting_streams[provider] and self.in_use(provider) < limit:
+                return self._grant(provider, "download", preemptible=True)
+            remaining = deadline - loop.time()
+            if remaining <= 0 or not await self._wait_change(provider, remaining):
+                return None

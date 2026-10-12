@@ -88,6 +88,26 @@ class NtfyHandler(logging.Handler):
                 pass
         await self._client.aclose()
 
+    def notify(self, title: str, message: str, priority: int = 2, tags: list[str] | None = None) -> None:
+        """A message that is not a log record (e.g. VOD "ready to watch"). Same redaction."""
+        if self._loop is None or self._queue is None or self._loop.is_closed():
+            return
+        msg = {
+            "topic": self.topic,
+            "title": scrub(title)[:250],
+            "message": scrub(message)[:3500],
+            "priority": priority,
+            "tags": tags or ["clapper"],
+        }
+        try:
+            running = asyncio.get_running_loop()
+        except RuntimeError:
+            running = None
+        if running is self._loop:
+            self._enqueue(msg)
+        else:
+            self._loop.call_soon_threadsafe(self._enqueue, msg)
+
     # ------------------------------------------------------------------ logging
     def emit(self, record: logging.LogRecord) -> None:
         if not record.name.startswith("pitlane") or record.name.startswith("pitlane.notify"):

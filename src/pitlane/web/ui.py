@@ -147,6 +147,7 @@ def ui_router(app: "App") -> APIRouter:
                 f"<span class=muted title='Connections to this provider'>{escape(name)} connections {c['in_use']}/{c['limit']}</span>"
                 for name, c in s["connections"].items()
             )
+            + (f"<a href='/vod'>Movies &amp; Shows</a><span class=muted>{escape(app.vod.summary())}</span>" if app.vod else "")
             + "<form class=inline method=post action='/ui/refresh-calendar'><button>Refresh calendar</button></form>"
             "<form class=inline method=post action='/ui/reload'><button>Reload config</button></form>"
             + (

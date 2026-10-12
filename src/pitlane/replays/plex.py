@@ -28,6 +28,13 @@ class PlexItem:
     view_count: int
     files: list[str]
     grandparent_title: str | None = None
+    guid: str | None = None
+
+    @property
+    def matched(self) -> bool:
+        """Matched to an online agent (VOD-8): not a ``local://`` or ``none`` guid."""
+        g = self.guid or ""
+        return bool(g) and not g.startswith(("local://", "com.plexapp.agents.none"))
 
 
 def poster_uri(key: str) -> str:
@@ -80,6 +87,7 @@ class PlexClient:
                     view_count=int(md.get("viewCount") or 0),
                     files=files,
                     grandparent_title=md.get("grandparentTitle"),
+                    guid=md.get("guid"),
                 )
             )
         return out
@@ -98,6 +106,33 @@ class PlexClient:
             and (not i.files or any(PurePath(f).name == filename for f in i.files))
         ]
         return hits[0] if len(hits) == 1 else None
+
+    async def find_by_file(self, type_: int, filename: str, params: dict[str, Any] | None = None) -> PlexItem | None:
+        """The item of ``type_`` (1 movie, 4 episode) whose media file is called ``filename``."""
+        resp = await self._req("GET", f"/library/sections/{self.section_id}/all", {"type": type_, **(params or {})})
+        hits = [i for i in self._items(resp.json()) if any(PurePath(f).name == filename for f in i.files)]
+        return hits[0] if hits else None
+
+    async def wait_for_file(
+        self, type_: int, filename: str, params: dict[str, Any] | None = None, timeout: float = 300.0, first_delay: float = 2.0
+    ) -> PlexItem | None:
+        deadline = time.monotonic() + timeout
+        delay = first_delay
+        while True:
+            try:
+                item = await self.find_by_file(type_, filename, params)
+                if item:
+                    return item
+            except httpx.HTTPError as e:
+                log.warning("plex lookup failed", extra={"error": str(e)})
+            if time.monotonic() + delay > deadline:
+                return None
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 30)
+
+    async def machine_id(self) -> str | None:
+        resp = await self._req("GET", "/")
+        return (resp.json().get("MediaContainer") or {}).get("machineIdentifier")
 
     async def wait_for_episode(
         self, season: int, episode_no: int, filename: str, show_title: str, timeout: float = 300.0, first_delay: float = 1.0

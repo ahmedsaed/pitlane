@@ -17,6 +17,7 @@ from .channel_json import ChannelJsonProvider
 from .directory import DirectoryProvider
 from .hdhomerun import HdhomerunProvider
 from .m3u import M3uProvider
+from .xtream import XtreamProvider
 
 log = get_logger("providers")
 
@@ -25,6 +26,7 @@ BUILTINS: dict[str, type] = {
     "channel-json": ChannelJsonProvider,
     "directory": DirectoryProvider,
     "hdhomerun": HdhomerunProvider,
+    "xtream": XtreamProvider,
 }
 
 

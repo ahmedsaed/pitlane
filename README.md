@@ -8,6 +8,8 @@ It does three things:
 2. **Guide** – builds an XMLTV guide from the official F1 calendar (Jolpica API), so every practice, qualifying, sprint and race appears as a proper programme with titles, descriptions and episode numbers.
 3. **Replays** – takes finished sessions (Plex DVR recordings, files you drop in a folder, or a configured replay provider) and files them into a clean, consistently named Plex library with metadata and optional spoiler protection.
 
+Optionally, it also brings an IPTV (Xtream Codes) account's **movies and shows** into Plex: browse and search the catalogue in Pitlane, request titles, and they are downloaded (only while no live stream needs the connection) into Plex libraries named for exact matching ([docs/vod.md](docs/vod.md)).
+
 Pitlane ships **no content sources**. Every channel and replay comes from a provider the operator configures.
 
 This repository holds the specification (`SPEC.md`, `docs/`) and the implementation (`src/pitlane/`, Python 3.12, ffmpeg).
@@ -22,13 +24,14 @@ This repository holds the specification (`SPEC.md`, `docs/`) and the implementat
 | [docs/tuner.md](docs/tuner.md) | HDHomeRun emulation and stream relay (live path) |
 | [docs/epg.md](docs/epg.md) | Calendar ingestion and XMLTV generation |
 | [docs/replays.md](docs/replays.md) | Replay ingestion, naming, metadata, spoiler mode |
+| [docs/vod.md](docs/vod.md) | Movies and shows from an Xtream account: catalogue, downloads, follows, retention |
 | [docs/plex-setup.md](docs/plex-setup.md) | How an operator wires Pitlane into Plex |
 | [docs/configuration.md](docs/configuration.md) | Full configuration reference |
 | [docs/qa/](docs/qa/) | Open design questions and the interim behavior chosen for each (`# QA-NNN` in the code) |
 
 ## Status
 
-v1 implemented (133 tests). The live TV path (tuner, guide, playback, failover, series recording) and replay filing (drop folder, Plex metadata, title cards, spoiler mode) are verified against a real Plex Media Server; see the verification log in `docs/plex-setup.md`.
+v1 implemented (145 tests). The live TV path (tuner, guide, playback, failover, series recording) and replay filing (drop folder, Plex metadata, title cards, spoiler mode) are verified against a real Plex Media Server; see the verification log in `docs/plex-setup.md`.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e '.[test]'

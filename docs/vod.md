@@ -1,6 +1,6 @@
 # Movies and shows from an IPTV account (VOD) – plan
 
-Status: **proposed**. Requirement IDs (`VOD-n`) move into `SPEC.md` when they are implemented.
+Status: **implemented** (2026-10-12). The requirements (`VOD-1` … `VOD-10`) are in `SPEC.md` §2.5; this document keeps the design.
 
 Pitlane already relays an IPTV account's live channels into Plex. Most Xtream Codes accounts also carry a catalogue of movies and series. Plex cannot list a remote URL as a library item, so Pitlane downloads the titles the operator asks for into dedicated Plex libraries, named so Plex matches them exactly.
 
@@ -16,20 +16,11 @@ Pitlane already relays an IPTV account's live channels into Plex. Most Xtream Co
 
 Samples: a movie was 720p h264/AAC at ~1.1 Mbps (1 h 39 m ≈ 0.8 GB). An episode was 720p h264 at ~1.6 Mbps (59 m ≈ 0.7 GB). Some recent movies are camera recordings, tagged `CAM` in the name. 539 movie names occur more than once (the same film in several categories or qualities).
 
-Not yet verified: whether file URLs support HTTP `Range` (needed for resume, §5.3), and whether a VOD download counts against the account's single connection the same way a live stream does. Assume it does.
+File URLs redirect to an edge server and support HTTP `Range` (`206` with `Content-Range`), so resume works **[verified 2026-10-12]**; the real size of the sample movie (805,403,509 bytes) matched the bitrate × duration estimate (805.2 MB). Not verified: whether a VOD download counts against the account's single connection the same way a live stream does. Pitlane assumes it does (VOD-4).
 
 ## 2. Requirements
 
-- **VOD-1** An `xtream` provider MAY declare a `vod` capability. Pitlane MUST then keep a local copy of the movie and series catalogue, refreshed at most once per `vod.catalog_refresh` (default 24 h), and nothing else from the panel unless the operator acts on a title.
-- **VOD-2** The web UI MUST let the operator search and browse the catalogue (by title, category, recently added) and request a movie, single episodes, whole seasons, or a whole series. It MUST offer to follow a series so new episodes are requested automatically.
-- **VOD-3** Requesting a title MUST fetch its details once (`get_vod_info` / `get_series_info`) and cache them. Browsing MUST NOT fetch details for titles the operator does not open.
-- **VOD-4** Downloads MUST share the provider's connection limit (LIVE-10) at the lowest priority: they start only while a slot is free, and a live tune preempts a running download, which later resumes where it stopped.
-- **VOD-5** Downloads MUST be byte copies of the panel's file (no remux), written next to the target as `.part`, resumable with HTTP `Range` when the panel supports it, and moved into the library only when complete.
-- **VOD-6** The operator MAY limit downloads to a daily time window, a maximum transfer rate, and a daily and a monthly data cap. Pitlane MUST NOT start a download that would leave less than `vod.min_free_space` on the target disk.
-- **VOD-7** Files MUST be named for exact Plex matching: movies `{Title} ({Year}) {tmdb-ID}/{Title} ({Year}) {tmdb-ID}.{ext}`, episodes `{Show} ({Year})/Season NN/{Show} ({Year}) - SNNENN.{ext}`. After a move, Pitlane MUST trigger a targeted scan of that folder only (as REP-5).
-- **VOD-8** After the scan, Pitlane MUST check the item's Plex match. An item that Plex did not match to an online agent MUST be listed in the UI with a link to Plex's "Fix Match".
-- **VOD-9** Retention MAY delete a downloaded movie or episode a configured number of days after Plex reports it watched (`viewCount > 0`). It is off by default and MUST support dry-run.
-- **VOD-10** Panel credentials MUST NOT appear in logs, the UI, notifications, or file names (OPS-4, OPS-7). Adult-flagged titles MUST be hidden unless `vod.show_adult: true`.
+See `SPEC.md` §2.5 (`VOD-1` … `VOD-10`).
 
 ## 3. Provider: `xtream`
 
