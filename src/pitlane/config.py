@@ -80,6 +80,9 @@ class TunersCfg(Strict):
     count: int = Field(2, ge=1, le=64)
     tune_timeout: Duration = timedelta(seconds=10)
     stall_timeout: Duration = timedelta(seconds=8)
+    # LIVE-7: when every source has failed mid-stream, reconnect to the last one that was
+    # playing this many times (1 s apart) before ending the stream. Reset after 30 s of play.
+    reconnect_attempts: int = Field(2, ge=0, le=10)
     device_name: str = "Pitlane"
     # docs/tuner.md: ModelNumber/FirmwareName "are configurable in case PMS behavior changes". # QA-007
     model_number: str = "HDTC-2US"

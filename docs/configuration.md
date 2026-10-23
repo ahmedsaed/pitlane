@@ -16,6 +16,7 @@ tuners:
   count: 2
   tune_timeout: 10s
   stall_timeout: 8s
+  reconnect_attempts: 2            # when every source failed mid-stream: retries of the last playing one (1 s apart)
   device_name: Pitlane
 
 health:

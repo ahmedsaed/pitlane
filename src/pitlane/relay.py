@@ -28,6 +28,8 @@ from .state import State, now_iso
 log = get_logger("relay")
 
 CHUNK = 64 * 1024
+RECONNECT_DELAY_S = 1.0
+STABLE_S = 30.0  # a source that played this long has its reconnect budget restored
 KILL_GRACE = 3.0
 
 TRANSCODE_PROFILES: dict[str, list[str]] = {
@@ -328,6 +330,7 @@ class StreamSession:
     tune_timeout: float
     stall_timeout: float
     client_addr: str = ""
+    reconnect_attempts: int = 2  # LIVE-7: retries of the last playing source before giving up
     id: str = field(default_factory=lambda: new_correlation_id("stream"))
     bytes_sent: int = 0
     failovers: int = 0
@@ -341,6 +344,10 @@ class StreamSession:
     _deferred: set = field(default_factory=set)  # source ids put back because their provider was busy
     offline_sources: list[Source] = field(default_factory=list)  # LIVE-6 last resort
     _restart: bool = False  # play channel: a new title was picked
+    _reconnects: int = 0  # reconnects used since the source last played steadily
+    _reconnecting: bool = False
+    _source_since: float = 0.0  # when the current source started delivering
+    _last_error: str = ""
     _stopped: bool = False  # the operator freed the provider's connection
 
     def stop(self) -> None:
@@ -436,6 +443,7 @@ class StreamSession:
         return False
 
     async def _fail(self, src: Source, state: str, reason: str) -> None:
+        self._last_error = reason
         await self._close_input(background=True)
         if src.kind == "vod":  # the play channel's state is the picked title, not source health
             log.warning("play channel could not start", extra={"channel": self.channel.id, "error": reason})
@@ -456,7 +464,8 @@ class StreamSession:
             self._lease = lease
             prev = self.current
             self.current = src
-            if prev is not None:
+            reconnecting, self._reconnecting = self._reconnecting, False
+            if prev is not None and not reconnecting:
                 self.failovers += 1
                 self.metrics.failovers.labels(channel=self.channel.id).inc()
                 log.warning(
@@ -485,8 +494,33 @@ class StreamSession:
                     error = await self._diagnose(src, deadline) or error
                 await self._fail(src, "offline", error)
                 continue
-            log.info("source started", extra={"channel": self.channel.id, "source": src.id, "label": src.label})
+            log.info("source reconnected" if reconnecting else "source started", extra={"channel": self.channel.id, "source": src.id, "label": src.label})
+            self._source_since = time.monotonic()
             return data
+
+    async def _reconnect(self, src: Source) -> bytes | None:
+        """LIVE-7: every source failed mid-stream. Reconnect to ``src`` (the one that was
+        playing) up to ``reconnect_attempts`` times before ending the stream. A short
+        provider hiccup then costs a second of picture instead of the whole stream.
+        Not for the play channel, local files, or an authorization error."""
+        if src.kind not in ("hls", "ts", "tuner") or self._stopped:
+            return None
+        if any(code in self._last_error for code in ("401", "403")):
+            return None  # the provider refuses the account: retrying will not help
+        if time.monotonic() - self._source_since > STABLE_S:
+            self._reconnects = 0
+        while self._reconnects < self.reconnect_attempts:
+            self._reconnects += 1
+            log.warning("reconnecting to source", extra={"channel": self.channel.id, "source": src.id, "attempt": self._reconnects})
+            await asyncio.sleep(RECONNECT_DELAY_S)
+            self._idx = len(self.sources) - 1  # exhaustion leaves the index past the end
+            self.sources.append(src)
+            self._reconnecting = True
+            try:
+                return await self._first_bytes(None)
+            except TuneFailed:
+                continue
+        return None
 
     async def _diagnose(self, src: Source, deadline: float | None) -> str | None:
         """ffmpeg got an answer that is not media (a captive portal, an error page).
@@ -586,8 +620,10 @@ class StreamSession:
             try:
                 data = await self._first_bytes(None)
             except TuneFailed:
-                log.warning("all sources exhausted; ending stream", extra={"channel": self.channel.id})
-                return
+                data = await self._reconnect(src)
+                if data is None:
+                    log.warning("all sources exhausted; ending stream", extra={"channel": self.channel.id})
+                    return
             yield data
 
     def record_start(self) -> None:

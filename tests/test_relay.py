@@ -311,6 +311,35 @@ async def test_all_sources_exhausted_ends_response(harness):
 
 
 @needs_ffmpeg
+async def test_reconnects_before_giving_up(harness):
+    """LIVE-7: every source failed mid-stream; the last playing one is retried (1 s apart)
+    before the stream ends, so a short provider outage costs seconds, not the stream."""
+    app = harness.app
+    async with httpx.AsyncClient(base_url=harness.base, timeout=None) as c:
+        async with c.stream("GET", "/auto/v101") as resp:
+            await read_bytes(resp, 50_000, 10)
+            for p in harness.proxies:
+                p.set_mode("stall")  # A stalls, B (failover) has nothing either
+            await asyncio.sleep(3 + 3 + 0.5)  # A's stall timeout + B's tune attempt
+            harness.proxies[0].set_mode("pass")  # A is back during the reconnect window
+            more = await read_bytes(resp, 100_000, 15)
+            assert len(more) >= 100_000, "stream ended instead of reconnecting"  # read_bytes stops at EOF
+            assert_ts(more)
+    assert await wait_until(lambda: not app.pool.in_use and not app.tracker.live, 5)
+    run = app.state.one("SELECT * FROM stream_runs")
+    assert run["failovers"] == 1  # A → B counts; the reconnect to A does not
+
+
+async def test_no_reconnect_after_authorization_error():
+    from pitlane.relay import StreamSession
+
+    s = StreamSession.__new__(StreamSession)
+    s._stopped, s._last_error, s.reconnect_attempts, s._reconnects, s._source_since = False, "Server returned 401 Unauthorized", 2, 0, 0.0
+    src = type("S", (), {"kind": "ts", "id": "x"})()
+    assert await s._reconnect(src) is None
+
+
+@needs_ffmpeg
 async def test_soak_flaps_no_leaks(harness):
     """NFR-4 (scaled down): repeated source up/down transitions leak no processes or fds.
 

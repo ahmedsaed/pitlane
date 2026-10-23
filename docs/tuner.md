@@ -91,8 +91,11 @@ loop over sources in order:
     watchdog: if no bytes for stall_timeout → kill ffmpeg, mark source degraded, continue loop
     if ffmpeg exits non-zero → mark source per error, continue loop
     if client disconnects → kill ffmpeg, release slot, return
-all sources exhausted → end response
+all sources exhausted → reconnect to the last playing source (reconnect_attempts, 1 s apart)
+                        → still nothing → end response
 ```
+
+- **Reconnect before giving up (LIVE-7).** A channel with backups still fails over immediately. Only when every source has failed does the relay retry the source that was last playing, up to `tuners.reconnect_attempts` times (default 2), 1 s apart, on the same client response. The budget is restored once a source has played for 30 s. A 401/403 is not retried (the provider refuses the account), nor are local files or the play channel. Observed case: a single-source IPTV channel whose panel cut the connection every 10–20 s; each cut ended the stream after one 8 s stall.
 
 - Timestamps restart on every switch. `-mpegts_flags +resend_headers`, together with a fresh PAT/PMT at the start of each segment, is what lets clients resync. Clients that can't resync may stop playback. This is acceptable in v1, and the switch is still logged.
 - The relay keeps no buffer beyond ffmpeg's pipe and one chunk, so that latency stays within NFR-2.

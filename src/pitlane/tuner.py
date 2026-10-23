@@ -103,6 +103,7 @@ def tuner_router(app: "App") -> APIRouter:
             state=app.state,
             tune_timeout=app.cfg.tuners.tune_timeout.total_seconds(),
             stall_timeout=app.cfg.tuners.stall_timeout.total_seconds(),
+            reconnect_attempts=app.cfg.tuners.reconnect_attempts,
             client_addr=request.client.host if request.client else "",
         )
         if not app.pool.try_acquire(session):
