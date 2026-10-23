@@ -15,7 +15,7 @@ server:
 tuners:
   count: 2
   tune_timeout: 10s
-  stall_timeout: 8s
+  stall_timeout: 8s                # IPTV panels that send live video in bursts need more (e.g. 30s); see docs/tuner.md
   reconnect_attempts: 2            # when every source failed mid-stream: retries of the last playing one (1 s apart)
   device_name: Pitlane
 

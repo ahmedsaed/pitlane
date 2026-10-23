@@ -61,8 +61,13 @@ def build_ffmpeg_args(
     transcode: str | None = None,
     loop: bool = False,
     ffmpeg: str | None = None,
+    read_timeout_s: float = 10.0,
 ) -> list[str]:
-    """Build the relay command line (docs/tuner.md "Relay pipeline")."""
+    """Build the relay command line (docs/tuner.md "Relay pipeline").
+
+    ``read_timeout_s`` is ffmpeg's own limit for one read (``-rw_timeout``). It must stay
+    above the relay's stall timeout: some panels deliver live channels in bursts with
+    pauses of ~10 s, which a 10 s ffmpeg limit turned into errors."""
     opened = check_opened(opened)
     src = opened.url_or_path
     args = [ffmpeg or ffmpeg_binary(), "-hide_banner", "-loglevel", "warning", "-nostdin"]
@@ -82,7 +87,7 @@ def build_ffmpeg_args(
             args += ["-headers", "".join(f"{k}: {v}\r\n" for k, v in headers.items())]
         if ua:
             args += ["-user_agent", ua]
-        args += ["-rw_timeout", "10000000", "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5"]
+        args += ["-rw_timeout", str(int(read_timeout_s * 1_000_000)), "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5"]
     args += opened.ffmpeg_input_args
     args += ["-i", src, "-map", "0:v:0?", "-map", "0:a?"]
     if transcode:
@@ -390,7 +395,8 @@ class StreamSession:
             inp: Any = HttpInput(self.hooks.http_client, opened.url_or_path, opened.headers)
         else:
             args = build_ffmpeg_args(
-                "ts" if src.kind == "tuner" else src.kind, opened, transcode=self.channel.transcode, loop=self.channel.loop
+                "ts" if src.kind == "tuner" else src.kind, opened, transcode=self.channel.transcode, loop=self.channel.loop,
+                read_timeout_s=max(10.0, self.stall_timeout + 5),
             )
             inp = FfmpegInput(args, self.tracker)
         await inp.start()

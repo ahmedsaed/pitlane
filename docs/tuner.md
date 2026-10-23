@@ -95,6 +95,7 @@ all sources exhausted → reconnect to the last playing source (reconnect_attemp
                         → still nothing → end response
 ```
 
+- **Bursty panels.** Some IPTV panels deliver a live channel in bursts: a block of video at several times the channel's bitrate, then nothing until the next block exists, pauses of ~10 s **[observed 2026-10-23, Sky Sports F1 on the operator's panel]**. IPTV apps buffer through that; with `stall_timeout: 8s` every pause looked like a dead source and streams and DVR recordings were cut every 10–40 s. Set `tuners.stall_timeout` above the longest pause (30 s on that server). ffmpeg's own read timeout follows it (`stall_timeout + 5 s`, at least 10 s).
 - **Reconnect before giving up (LIVE-7).** A channel with backups still fails over immediately. Only when every source has failed does the relay retry the source that was last playing, up to `tuners.reconnect_attempts` times (default 2), 1 s apart, on the same client response. The budget is restored once a source has played for 30 s. A 401/403 is not retried (the provider refuses the account), nor are local files or the play channel. Observed case: a single-source IPTV channel whose panel cut the connection every 10–20 s; each cut ended the stream after one 8 s stall.
 
 - Timestamps restart on every switch. `-mpegts_flags +resend_headers`, together with a fresh PAT/PMT at the start of each segment, is what lets clients resync. Clients that can't resync may stop playback. This is acceptable in v1, and the switch is still logged.

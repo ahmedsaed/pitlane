@@ -121,6 +121,9 @@ def setup_logging(level: str = "info", fmt: str | None = None, stream: Any = Non
     # OPS-4: request URLs may embed provider credentials; never log them per request.
     for name in ("httpx", "httpcore"):
         logging.getLogger(name).setLevel(logging.WARNING)
+    # watchfiles logs "N changes detected" at INFO for every write; a DVR recording
+    # growing in an inbox made that about one line per second.
+    logging.getLogger("watchfiles").setLevel(logging.WARNING)
     # uvicorn installs its own handlers; route them through ours.
     for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
         lg = logging.getLogger(name)
