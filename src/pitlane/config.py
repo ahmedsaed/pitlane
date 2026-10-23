@@ -59,6 +59,17 @@ class ServerCfg(Strict):
     ui_password: str | None = None
     data_dir: str = "/data"
     log_level: Literal["debug", "info", "warning", "error"] = "info"
+    # OPS-5: JSON lines also written to a file that survives container rebuilds.
+    # "auto" = {data_dir}/logs/pitlane.log; null turns it off.
+    log_file: str | None = "auto"
+    log_max_mb: int = Field(10, ge=1, le=1000)  # rotate at this size
+    log_keep: int = Field(5, ge=0, le=100)  # rotated files kept
+
+    @property
+    def log_path(self) -> str | None:
+        if not self.log_file:
+            return None
+        return str(Path(self.data_dir) / "logs" / "pitlane.log") if self.log_file == "auto" else self.log_file
 
     @field_validator("bind")
     @classmethod

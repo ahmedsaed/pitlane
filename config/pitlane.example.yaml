@@ -6,6 +6,9 @@ server:
   ui_password: ${file:/config/ui_password}
   data_dir: /data
   log_level: info
+  log_file: auto              # JSON lines in {data_dir}/logs/pitlane.log (survives rebuilds); null = off
+  log_max_mb: 10              # rotate at this size
+  log_keep: 5                 # rotated files kept
 
 tuners:
   count: 2

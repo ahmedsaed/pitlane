@@ -27,7 +27,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {err}", file=sys.stderr)
         return 2
 
-    setup_logging(cfg.server.log_level)
+    srv = cfg.server
+    running = args.cmd != "check-config"  # a config check must not touch the data folder
+    setup_logging(srv.log_level, file=srv.log_path if running else None, max_bytes=srv.log_max_mb * 1024 * 1024, backups=srv.log_keep)
     log = get_logger("cli")
     if args.cmd == "check-config":
         for w in config_warnings(cfg):

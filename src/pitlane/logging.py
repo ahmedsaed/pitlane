@@ -107,7 +107,16 @@ class TextFormatter(logging.Formatter):
         return redact(line)
 
 
-def setup_logging(level: str = "info", fmt: str | None = None, stream: Any = None) -> None:
+def setup_logging(
+    level: str = "info",
+    fmt: str | None = None,
+    stream: Any = None,
+    file: str | None = None,
+    max_bytes: int = 10 * 1024 * 1024,
+    backups: int = 5,
+) -> None:
+    """Console logging, plus JSON lines in ``file`` (rotated at ``max_bytes``, ``backups``
+    kept) so the log survives container rebuilds. Same redaction in both (OPS-4)."""
     fmt = (fmt or os.environ.get("PITLANE_LOG_FORMAT") or "json").lower()
     handler = logging.StreamHandler(stream or sys.stderr)
     handler.setFormatter(TextFormatter() if fmt == "text" else JsonFormatter())
@@ -115,8 +124,21 @@ def setup_logging(level: str = "info", fmt: str | None = None, stream: Any = Non
     for h in list(root.handlers):
         if getattr(h, "_pitlane", False):
             root.removeHandler(h)
+            h.close()
     handler._pitlane = True  # type: ignore[attr-defined]
     root.addHandler(handler)
+    if file:
+        from logging.handlers import RotatingFileHandler
+
+        try:
+            os.makedirs(os.path.dirname(file) or ".", exist_ok=True)
+            fh = RotatingFileHandler(file, maxBytes=max_bytes, backupCount=backups, encoding="utf-8")
+        except OSError as e:  # never refuse to start over the log file
+            print(f"pitlane: cannot write log file {file}: {e}", file=sys.stderr)
+        else:
+            fh.setFormatter(JsonFormatter())
+            fh._pitlane = True  # type: ignore[attr-defined]
+            root.addHandler(fh)
     root.setLevel(level.upper())
     # OPS-4: request URLs may embed provider credentials; never log them per request.
     for name in ("httpx", "httpcore"):
