@@ -78,7 +78,7 @@ epg:
   post_roll: { default: 10m, RACE: 20m }
   durations: { FP1: 60m, FP2: 60m, FP3: 60m, SQ: 45m, SPRINT: 60m, QUALI: 60m, RACE: 120m }
   filler_max: 6h                 # filler block length; blocks start at local midnight (epg.timezone) + multiples of this
-  manual: []
+  manual: []                     # extra programmes per weekend, e.g. post-race shows (anchor: end); see docs/epg.md
 
 replays:
   inboxes:

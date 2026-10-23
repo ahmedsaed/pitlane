@@ -283,14 +283,27 @@ PROVIDER_MODELS: dict[str, type[BaseModel]] = {
 
 
 class ManualProgrammeCfg(Strict):
-    """EPG-7 manual programmes, anchored to a session type."""
+    """EPG-7 manual programmes, anchored to a session type.
+
+    ``anchor: start`` (default) times ``offset`` from the session's official start, e.g. a
+    pre-race show at -90m. ``anchor: end`` times it from the end of the session's guide
+    slot (start + nominal duration + post-roll), e.g. the post-race discussion at 0m, so
+    it follows the session however long the session is scheduled to run."""
 
     channel: str
     title: str
     relative_to: SessionType
-    offset: Duration
+    anchor: Literal["start", "end"] = "start"
+    offset: Duration = timedelta(0)
     duration: Duration
     supplementary_index: int = Field(ge=1, le=89)
+
+    @model_validator(mode="after")
+    def _after_end(self) -> "ManualProgrammeCfg":
+        if self.anchor == "end" and self.offset < timedelta(0):
+            # it would overlap the session, and overlaps cut the earlier programme (the session)
+            raise ValueError("offset: must be 0 or more with anchor: end")
+        return self
 
 
 def _post_roll(v: Any) -> Any:

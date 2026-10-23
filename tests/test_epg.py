@@ -311,3 +311,25 @@ def test_next_up_card(calendar_2026):
     ev = calendar_2026.event("2026-17")
     png = render_next_card(ev, ev.sessions[0], ZoneInfo("Africa/Cairo"))
     assert png[:8] == b"\x89PNG\r\n\x1a\n" and len(png) > 5000
+
+
+def test_post_session_programmes_follow_the_session(calendar_2026):
+    """EPG-7 anchor: end: a post-race/post-qualifying show starts where the session's
+    guide slot ends, is a new supplementary episode, and never shortens the session."""
+    from pitlane.config import ConfigError
+
+    cfg = make_cfg(manual=[
+        {"channel": "f1-main", "title": "Post-Race Analysis", "relative_to": "RACE", "anchor": "end", "duration": "60m", "supplementary_index": 2},
+        {"channel": "f1-main", "title": "Post-Qualifying Analysis", "relative_to": "QUALI", "anchor": "end", "duration": "45m", "supplementary_index": 1},
+    ])  # fmt: skip
+    progs = build_programmes(cfg, {"f1": calendar_2026}, datetime(2026, 10, 9, 8, tzinfo=UTC))["f1-main"]
+    race = next(p for p in progs if p.sub_title == "Singapore Grand Prix – Race")
+    post = next(p for p in progs if p.sub_title == "Singapore Grand Prix – Post-Race Analysis")
+    assert race.stop == datetime(2026, 10, 11, 14, 20, tzinfo=UTC)  # 12:00 + 120 + 20, untouched
+    assert post.start == race.stop and post.stop - post.start == timedelta(minutes=60)
+    assert post.title == "Formula 1" and post.new and post.episode_no == 1712  # round 17, slot 10 + 2
+    quali = next(p for p in progs if p.sub_title == "Singapore Grand Prix – Qualifying")
+    pq = next(p for p in progs if p.sub_title == "Singapore Grand Prix – Post-Qualifying Analysis")
+    assert pq.start == quali.stop and pq.episode_no == 1711
+    with pytest.raises(ConfigError):
+        make_cfg(manual=[{"channel": "f1-main", "title": "x", "relative_to": "RACE", "anchor": "end", "offset": "-5m", "duration": "30m", "supplementary_index": 3}])

@@ -135,7 +135,8 @@ def _session_programmes(ch: ChannelCfg, cfg: Config, calendars: dict[str, Calend
                 anchor = ev.session(m.relative_to)
                 if anchor is None:
                     continue
-                start = anchor.starts_at + m.offset
+                base = session_window(anchor, cfg)[1] if m.anchor == "end" else anchor.starts_at
+                start = base + m.offset
                 progs.append(
                     Programme(
                         channel=cid,

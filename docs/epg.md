@@ -104,3 +104,14 @@ epg:
 ```
 
 Manual items repeat every weekend because they're anchored to a session type, not a date.
+
+`anchor: end` times `offset` from the end of the session's guide slot (official start + nominal duration + post-roll) instead of its start. Use it for coverage that follows a session, such as the post-race or post-qualifying discussion:
+
+```yaml
+epg:
+  manual:
+    - { channel: f1-main, title: Post-Qualifying Analysis, relative_to: QUALI, anchor: end, duration: 30m, supplementary_index: 1 }
+    - { channel: f1-main, title: Post-Race Analysis,       relative_to: RACE,  anchor: end, duration: 60m, supplementary_index: 2 }
+```
+
+The programme starts exactly where the session's slot ends, so the two recordings are back to back with nothing missed in between. Like every manual item it is a new supplementary episode (round × 100 + 10 + index, e.g. S2026E1812), so the single "Formula 1" series rule records it and replay filing puts it next to the race. With `anchor: end`, `offset` must be 0 or more: an earlier start would overlap the session, and overlaps are resolved by cutting the earlier programme, which would shorten the session's own recording.
