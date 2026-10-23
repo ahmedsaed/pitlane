@@ -330,6 +330,44 @@ async def test_reconnects_before_giving_up(harness):
     assert run["failovers"] == 1  # A → B counts; the reconnect to A does not
 
 
+@needs_ffmpeg
+async def test_refused_account_alert_and_reason(harness, caplog):
+    """A 401 from the provider gives one clear "provider refused the account" error, and the
+    "tune failed" warning says why instead of only "no usable sources"."""
+    import logging
+
+    caplog.set_level(logging.INFO, logger="pitlane")
+    for p in harness.proxies:
+        p.set_mode("unauthorized")
+    async with httpx.AsyncClient(base_url=harness.base, timeout=30) as c:
+        assert (await c.get("/auto/v101")).status_code == 503
+    refused = [r for r in caplog.records if r.getMessage() == "provider refused the account"]
+    assert refused and refused[0].levelno == logging.ERROR
+    assert refused[0].provider == "mine" and refused[0].status == "401" and not hasattr(refused[0], "channel")
+    failed = [r for r in caplog.records if r.getMessage() == "tune failed"]
+    assert failed and "401" in failed[-1].error
+
+
+async def test_refused_alert_is_sent_once_per_provider():
+    import logging
+
+    from pitlane.notify import NtfyHandler
+
+    sent = []
+    h = NtfyHandler("https://ntfy.example.invalid", "pitlane",
+                    transport=httpx.MockTransport(lambda r: sent.append(r) or httpx.Response(200)))  # fmt: skip
+    h.start()
+    lg = logging.getLogger("pitlane.relay")
+    lg.addHandler(h)
+    try:
+        for _ in range(3):  # three channels/sources refused in a row
+            lg.error("provider refused the account", extra={"provider": "iptv", "status": "401", "hint": "x"})
+        await h.stop()
+    finally:
+        lg.removeHandler(h)
+    assert len(sent) == 1
+
+
 async def test_no_reconnect_after_authorization_error():
     from pitlane.relay import StreamSession
 

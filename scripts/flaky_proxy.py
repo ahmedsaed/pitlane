@@ -9,6 +9,7 @@ Control endpoints (on the same port):
     GET /_control/mode?set=stall    accept requests and active responses but send nothing
     GET /_control/mode?set=drop     close every connection immediately (including active ones)
     GET /_control/mode?set=error    answer 503
+    GET /_control/mode?set=unauthorized  answer 401 (an IPTV panel refusing the account)
     GET /_control/mode?set=portal   redirect to an HTML page on "localhost" (like an ISP quota/captive portal)
     GET /_control/mode              show the current mode
 
@@ -23,7 +24,7 @@ import contextlib
 import sys
 from urllib.parse import parse_qs, urlsplit
 
-MODES = {"pass", "stall", "drop", "error", "portal"}
+MODES = {"pass", "stall", "drop", "error", "unauthorized", "portal"}
 
 PORTAL_PAGE = b"<!DOCTYPE html><html><head><title>Quota Notice</title></head><body>You have used 100% of your quota.</body></html>"
 
@@ -92,6 +93,10 @@ class FlakyProxy:
                 return
             if self.mode == "drop":
                 writer.transport.abort()
+                return
+            if self.mode == "unauthorized":  # what an IPTV panel answers when it refuses the account
+                writer.write(b"HTTP/1.1 401 Unauthorized\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                await writer.drain()
                 return
             if self.mode == "error":
                 writer.write(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")

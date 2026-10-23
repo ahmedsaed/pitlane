@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import shutil
 import signal
 import time
@@ -29,6 +30,14 @@ log = get_logger("relay")
 
 CHUNK = 64 * 1024
 RECONNECT_DELAY_S = 1.0
+# Not a bare "401": a stream id can be 401 ("/live/…/401.ts").
+_REFUSED = re.compile(r"\b(401) Unauthorized|\b(403) Forbidden|\bHTTP (40[13])\b", re.IGNORECASE)
+
+
+def refused_status(error: str) -> str | None:
+    """"401 Unauthorized" / "403 Forbidden" in a source error: the provider refuses the account."""
+    m = _REFUSED.search(error or "")
+    return next((g for g in m.groups() if g), None) if m else None
 STABLE_S = 30.0  # a source that played this long has its reconnect budget restored
 KILL_GRACE = 3.0
 
@@ -444,6 +453,15 @@ class StreamSession:
 
     async def _fail(self, src: Source, state: str, reason: str) -> None:
         self._last_error = reason
+        refused = refused_status(reason)
+        if refused:
+            # One clear, high-priority alert per provider (ntfy throttles by provider, not
+            # by channel/source), instead of a "tune failed" for every channel tried.
+            log.error(
+                "provider refused the account",
+                extra={"provider": src.provider, "status": refused,
+                       "hint": "is the account in use on another device, expired, or changed by the provider?"},
+            )  # fmt: skip
         await self._close_input(background=True)
         if src.kind == "vod":  # the play channel's state is the picked title, not source health
             log.warning("play channel could not start", extra={"channel": self.channel.id, "error": reason})
@@ -505,7 +523,7 @@ class StreamSession:
         Not for the play channel, local files, or an authorization error."""
         if src.kind not in ("hls", "ts", "tuner") or self._stopped:
             return None
-        if any(code in self._last_error for code in ("401", "403")):
+        if refused_status(self._last_error):
             return None  # the provider refuses the account: retrying will not help
         if time.monotonic() - self._source_since > STABLE_S:
             self._reconnects = 0
@@ -622,7 +640,7 @@ class StreamSession:
             except TuneFailed:
                 data = await self._reconnect(src)
                 if data is None:
-                    log.warning("all sources exhausted; ending stream", extra={"channel": self.channel.id})
+                    log.warning("all sources exhausted; ending stream", extra={"channel": self.channel.id, "error": self._last_error or None})
                     return
             yield data
 
@@ -707,7 +725,7 @@ class RelayResponse:
         try:
             first = await s.tune()
         except TuneFailed as e:
-            log.warning("tune failed", extra={"channel": s.channel.id, "reason": str(e)})
+            log.warning("tune failed", extra={"channel": s.channel.id, "reason": str(e), "error": s._last_error or None})
             s.metrics.tuner_rejections.inc()
             body = b"No source could start\n"
             await send({"type": "http.response.start", "status": 503, "headers": [
