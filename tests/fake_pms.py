@@ -145,10 +145,15 @@ class FakePMS:
         if err := self._record(request):
             return err
         rk = request.path_params["rk"]
+        if request.query_params.get("url"):
+            # PMS 1.43.5: a poster by URL on a local address is refused [verified 2026-10-26]
+            return Response(status_code=502)
+        body = await request.body()
         if rk in self.episodes:
             e = self.episodes[rk]
-            url = request.query_params.get("url", "")
-            e.posters.append(url)
+            if not body.startswith(b"\x89PNG"):
+                return Response(status_code=400)
+            e.posters.append(f"png:{len(body)}")
             if self.discard_uploads > 0:
                 self.discard_uploads -= 1  # 200, card "fetched", but not kept
             else:

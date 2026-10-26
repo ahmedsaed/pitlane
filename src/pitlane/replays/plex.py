@@ -61,13 +61,20 @@ class PlexClient:
     def _headers(self, token: str | None = None) -> dict[str, str]:
         return {"X-Plex-Token": token or self.token, "Accept": "application/json"}
 
-    async def _req(self, method: str, path: str, params: dict[str, Any] | None = None, token: str | None = None) -> httpx.Response:
+    async def _req(
+        self, method: str, path: str, params: dict[str, Any] | None = None, token: str | None = None,
+        content: bytes | None = None, content_type: str | None = None,
+    ) -> httpx.Response:  # fmt: skip
+        headers = self._headers(token)
+        if content_type:
+            headers["Content-Type"] = content_type
         return await self.http.request(
             method,
             f"{self.url}{path}",
             policy=self.policy,
-            headers=self._headers(token),
+            headers=headers,
             params={k: str(v) for k, v in (params or {}).items()},
+            content=content,
         )
 
     # ------------------------------------------------------------------ scan + lookup
@@ -174,8 +181,19 @@ class PlexClient:
         params = {"type": 4, "id": rating_key, "summary.value": summary, "summary.locked": 1}
         await self._req("PUT", f"/library/sections/{self.section_id}/all", params)
 
-    async def set_poster(self, rating_key: str, image_url: str) -> None:
-        await self._req("POST", f"/library/metadata/{rating_key}/posters", {"url": image_url})
+    async def set_poster(self, rating_key: str, image: bytes | str) -> None:
+        """Upload ``image`` (PNG/JPEG bytes, or a URL Pitlane downloads first) as the poster.
+
+        The image is sent as the request body. Since PMS 1.43.5, ``POST …/posters?url=``
+        answers 502 for an image on a local address (such as Pitlane's title cards),
+        while an upload is accepted and becomes the selected ``upload://`` poster
+        **[verified 2026-10-26, PMS 1.43.5]**."""
+        if isinstance(image, str):
+            resp = await self.http.get(image, policy=self.policy)
+            data, ctype = resp.content, resp.headers.get("content-type", "image/png")
+        else:
+            data, ctype = image, "image/jpeg" if image[:3] == b"\xff\xd8\xff" else "image/png"
+        await self._req("POST", f"/library/metadata/{rating_key}/posters", content=data, content_type=ctype)
 
     async def poster_selected_upload(self, rating_key: str) -> bool:
         """REP-5 step 4 verification: is an ``upload://`` poster the selected one?

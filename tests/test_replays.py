@@ -252,7 +252,8 @@ async def test_replay_filing_acceptance(env):
     assert race.title == "Singapore Grand Prix – Race"
     assert race.summary == "Round 17 · Marina Bay Street Circuit, Singapore · Sunday 11 October 2026"
     assert {"title", "summary", "originallyAvailableAt"} <= race.locked
-    assert race.posters == ["http://pitlane.invalid:5004/static/cards/2026-17/1705.png"]
+    # the title card is uploaded as image bytes (PMS 1.43.5 refuses posters by local URL)
+    assert len(race.posters) == 1 and race.posters[0].startswith("png:")
     assert pms.titles.get(FakePMS.SHOW_KEY) == "Formula 1" and pms.titles.get("22026") == "2026 Season"
 
 

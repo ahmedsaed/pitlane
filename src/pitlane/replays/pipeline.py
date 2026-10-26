@@ -328,9 +328,12 @@ class ReplayPipeline:
             when = (m.session.starts_at if m.session else (m.event.sessions[-1].starts_at if m.event.sessions else None))
             date = when.date().isoformat() if when else ""
             await self.plex.set_episode_metadata(item.rating_key, title, summary, date)
-            # Optional thumbnail: a spoiler-safe title card served by Pitlane, verified and
-            # retried in the background so other files are not held up (REP-5 step 4).
-            card = f"{self.app.base_url()}/static/cards/{m.event.id}/{episode_no}.png"
+            # Optional thumbnail: a spoiler-safe title card, rendered here and uploaded,
+            # verified and retried in the background so other files are not held up
+            # (REP-5 step 4).
+            from .titlecard import render_card
+
+            card = await asyncio.to_thread(render_card, m.event, m.session, m.title)
             await self.plex.set_poster(item.rating_key, card)
             self._spawn_poster_check(item.rating_key, card, target.name)
             self.app.state.execute(
@@ -341,12 +344,12 @@ class ReplayPipeline:
         except Exception as e:
             log.error("plex metadata failed", extra={"file": target.name, "error": str(e)})
 
-    def _spawn_poster_check(self, rating_key: str, card_url: str, name: str) -> None:
-        t = asyncio.get_running_loop().create_task(self.ensure_poster(rating_key, card_url, name))
+    def _spawn_poster_check(self, rating_key: str, card: bytes, name: str) -> None:
+        t = asyncio.get_running_loop().create_task(self.ensure_poster(rating_key, card, name))
         self.poster_tasks.add(t)
         t.add_done_callback(self.poster_tasks.discard)
 
-    async def ensure_poster(self, rating_key: str, card_url: str, name: str = "") -> bool:
+    async def ensure_poster(self, rating_key: str, card: bytes | str, name: str = "") -> bool:
         """REP-5 step 4: PMS may discard an upload made while it still processes a new
         item. Verify that an ``upload://`` poster is selected; otherwise re-upload with
         backoff 30/60/120/240 s, then give up with a warning. Logs success too."""
@@ -369,7 +372,7 @@ class ReplayPipeline:
                 await asyncio.sleep(self.poster_retry_delays[attempt])
                 attempt += 1
                 try:
-                    await self.plex.set_poster(rating_key, card_url)
+                    await self.plex.set_poster(rating_key, card)
                 except Exception as e:
                     log.warning("poster re-upload failed", extra={"file": name, "error": str(e)})
 

@@ -83,6 +83,7 @@ class FetchClient:
         policy: FetchPolicy | None = None,
         headers: dict[str, str] | None = None,
         params: dict[str, str] | None = None,
+        content: bytes | None = None,
     ) -> httpx.Response:
         policy = policy or FetchPolicy()
         host = urlparse(url).netloc
@@ -93,7 +94,7 @@ class FetchClient:
         while True:
             await self._limiter.wait(host, policy.rate_limit_per_sec)
             try:
-                resp = await self._client.request(method, url, headers=hdrs, params=params, timeout=policy.timeout)
+                resp = await self._client.request(method, url, headers=hdrs, params=params, content=content, timeout=policy.timeout)
                 if resp.status_code in RETRY_STATUSES and attempt < policy.retries:
                     raise _Retryable(f"HTTP {resp.status_code}")
                 resp.raise_for_status()
