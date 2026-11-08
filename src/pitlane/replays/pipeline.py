@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from ..app import App
 
 RETENTION_EVERY = timedelta(hours=6)
+SPLIT_GRACE = timedelta(minutes=15)  # file times vs the guide slot, for split recordings
 
 log = get_logger("replays")
 
@@ -262,6 +263,8 @@ class ReplayPipeline:
             except Exception as e:
                 log.exception("filing failed")
                 return {"outcome": "error", "error": str(e)}
+            if res.outcome == "conflict" and (first := self._split_of(m, path)) is not None:
+                return await self._append_to(first, path, m, "split recording appended")
             if res.outcome in ("conflict", "duplicate"):
                 # REP-3: for "duplicate", res.target is the existing library path (the candidate).
                 dest = await self._to_review(path, res.outcome, [str(res.target)], sha)
@@ -292,6 +295,35 @@ class ReplayPipeline:
         if row is None or target is None or not target.exists() or target.suffix.lower() != path.suffix.lower():
             dest = await self._to_review(path, "continuation without its session", [s.id], sha)
             return {"outcome": "needs_review", "reason": "continuation without its session", "path": str(dest)}
+        return await self._append_to(row, path, m, "continuation appended")
+
+    def _split_of(self, m: Match, path: Path) -> dict[str, Any] | None:
+        """The episode that ``path`` continues when Plex split one airing into two files.
+
+        Plex ends a recording early when it restarts (2026-11-08: Watchtower updated it
+        mid-race) or its tuner stream drops, then records the rest of the guide slot as a
+        new file under the same episode. Both pieces ending inside the session's slot
+        means one airing; anything else (another day, another source) is a real conflict."""
+        s = m.session
+        if s is None or m.continues is not None:
+            return None
+        row = self.app.state.one("SELECT * FROM library_items WHERE session_id=? ORDER BY filed_at DESC LIMIT 1", (s.id,))
+        if row is None or Path(row["path"]).suffix.lower() != path.suffix.lower() or not Path(row["path"]).exists():
+            return None
+        start = session_window(s, self.app.cfg)[0]
+        end = (self.app.overrun.end_of(s) if self.app.overrun else session_window(s, self.app.cfg)[1]) + SPLIT_GRACE
+        filed = _parse_iso(row["filed_at"])
+        try:
+            ended = datetime.fromtimestamp(path.stat().st_mtime, UTC)
+        except OSError:
+            return None
+        if filed is None or not (start <= filed <= end and start <= ended <= end and ended >= filed - SPLIT_GRACE):
+            return None
+        return row
+
+    async def _append_to(self, row: dict[str, Any], path: Path, m: Match, what: str) -> dict[str, Any]:
+        """Append ``path`` to the library item ``row`` (same broadcast, later piece)."""
+        target = Path(row["path"])
         joined = await _join_ts(target, path)
         if joined is not None:
             os.replace(joined, target)
@@ -301,7 +333,7 @@ class ReplayPipeline:
         path.unlink()
         new_sha = await sha256_async(target)
         self.app.state.execute("UPDATE library_items SET sha256=? WHERE path=?", (new_sha, row["path"]))
-        log.info("continuation appended", extra={"file": path.name, "target": str(target), "episode": m.episode_no})
+        log.info(what, extra={"file": path.name, "target": str(target), "episode": m.episode_no})
         if self.plex and row["plex_rating_key"]:
             try:
                 await self.plex.analyze(row["plex_rating_key"])  # new duration

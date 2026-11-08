@@ -815,3 +815,32 @@ async def test_appended_episode_has_continuous_timestamps(env):
     target = Path(filed["target"])
     assert 13.5 < ts_duration(target) < 14.5
     assert not cont.exists() and not list(target.parent.glob(".*joining"))
+
+
+@needs_ffmpeg
+async def test_split_recording_inside_the_slot_is_appended(env):
+    """2026-11-08: Plex restarted mid-race and recorded the rest of the slot as a second
+    file with the same episode number. Pieces inside the slot are one airing."""
+    from pitlane.xmltv import session_window
+
+    app = await env()
+    tmp = env.tmp
+    s = app.calendar.session("2026-17-RACE")
+    start, end = session_window(s, app.cfg)
+    first = make_ts(tmp / "dvr" / "Formula 1 - S2026E1705 - Singapore Grand Prix – Race.ts", 8)
+    filed = await app.replays.process_file(first)
+    assert filed["outcome"] == "filed"
+    mid = start + (end - start) / 2
+    app.state.execute("UPDATE library_items SET filed_at=? WHERE session_id=?", (mid.isoformat(), s.id))
+    rest = make_ts(tmp / "dvr" / "Formula 1 - S2026E1705 - Singapore Grand Prix – Race.ts", 6)
+    os.utime(rest, (end.timestamp(), end.timestamp()))
+    r = await app.replays.process_file(rest)
+    assert r["outcome"] == "appended" and r["target"] == filed["target"]
+    assert 13.5 < ts_duration(Path(filed["target"])) < 14.5 and not rest.exists()
+
+    # The same episode recorded again a day later is a real conflict.
+    again = make_ts(tmp / "dvr" / "Formula 1 - S2026E1705 - Singapore Grand Prix – Race.ts", 4)
+    later = (end + timedelta(days=1)).timestamp()
+    os.utime(again, (later, later))
+    r = await app.replays.process_file(again)
+    assert r["outcome"] == "needs_review" and r["reason"] == "conflict"
