@@ -284,7 +284,7 @@ class ReplayPipeline:
 
     async def _append_continuation(self, path: Path, m: Match, sha: str | None) -> dict[str, Any]:
         """EPG-8: a "(continued)" recording is the same broadcast, cut where the session's
-        guide slot ended. Append it to the session's episode (MPEG-TS concatenates)."""
+        guide slot ended. Append it to the session's episode."""
         s = m.continues
         assert s is not None
         row = self.app.state.one("SELECT * FROM library_items WHERE session_id=? ORDER BY filed_at DESC LIMIT 1", (s.id,))
@@ -292,7 +292,12 @@ class ReplayPipeline:
         if row is None or target is None or not target.exists() or target.suffix.lower() != path.suffix.lower():
             dest = await self._to_review(path, "continuation without its session", [s.id], sha)
             return {"outcome": "needs_review", "reason": "continuation without its session", "path": str(dest)}
-        await asyncio.to_thread(_append_file, path, target)
+        joined = await _join_ts(target, path)
+        if joined is not None:
+            os.replace(joined, target)
+        else:  # keep the footage even if the result's timestamps jump
+            log.warning("could not remux the joined episode; appended as is", extra={"file": path.name, "target": target.name})
+            await asyncio.to_thread(_append_file, path, target)
         path.unlink()
         new_sha = await sha256_async(target)
         self.app.state.execute("UPDATE library_items SET sha256=? WHERE path=?", (new_sha, row["path"]))
@@ -679,6 +684,48 @@ class ReplayPipeline:
             except Exception:
                 log.exception("retention failed")
             await asyncio.sleep(RETENTION_EVERY.total_seconds())
+
+
+async def _duration(path: Path) -> float | None:
+    exe = shutil.which("ffprobe")
+    if not exe:
+        return None
+    proc = await asyncio.create_subprocess_exec(
+        exe, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path),
+        stdin=asyncio.subprocess.DEVNULL, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
+    )  # fmt: skip
+    out, _ = await proc.communicate()
+    try:
+        return float(out.decode().strip().splitlines()[0])
+    except (ValueError, IndexError):
+        return None
+
+
+async def _join_ts(first: Path, second: Path) -> Path | None:
+    """``first`` + ``second`` as one MPEG-TS with continuous timestamps, in a hidden file
+    next to ``first``; None if that fails. Each recording's timestamps start again near
+    zero; byte-appending keeps them, and players then take the episode for as long as
+    its last piece (seen 2026-11-08: a 67 min episode shown as 0.2 min). ffmpeg reads
+    the pieces as one stream (``concat:``), corrects the jump and copies the streams."""
+    from ..relay import ffmpeg_binary
+
+    a, b = await _duration(first), await _duration(second)
+    if a is None or b is None:
+        return None
+    tmp = first.with_name(f".{first.name}.joining")
+    proc = await asyncio.create_subprocess_exec(
+        ffmpeg_binary(), "-hide_banner", "-loglevel", "error", "-nostdin", "-y", "-i", f"concat:{first}|{second}",
+        "-map", "0:v?", "-map", "0:a?", "-c", "copy", "-f", "mpegts", str(tmp),
+        stdin=asyncio.subprocess.DEVNULL, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE,
+    )  # fmt: skip
+    _, err = await proc.communicate()
+    got = await _duration(tmp) if proc.returncode == 0 else None
+    if got is None or abs(got - (a + b)) > max(5.0, 0.01 * (a + b)):
+        log.warning("joining failed", extra={"first": first.name, "second": second.name, "expected_s": round(a + b, 1),
+                                             "got_s": got, "error": err.decode(errors="replace")[-300:]})  # fmt: skip
+        tmp.unlink(missing_ok=True)
+        return None
+    return tmp
 
 
 def _append_file(src: Path, dst: Path) -> None:

@@ -765,6 +765,7 @@ def test_live_timing_messages():
 
 
 async def test_continued_recording_is_appended_to_its_session(env):
+    """Not real media (random bytes): the remux is skipped and the bytes are appended."""
     app = await env()
     tmp = env.tmp
     a, b = os.urandom(5000), os.urandom(3000)
@@ -779,3 +780,38 @@ async def test_continued_recording_is_appended_to_its_session(env):
     orphan = write_media(tmp / "dvr" / "Formula 1 - S2026E1782 - Singapore Grand Prix – Practice 3 (continued).ts")
     r = await app.replays.process_file(orphan)
     assert r["outcome"] == "needs_review"
+
+
+def make_ts(path: Path, seconds: int) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"testsrc2=size=320x180:rate=25:duration={seconds}",
+         "-f", "lavfi", "-i", f"sine=duration={seconds}", "-c:v", "libx264", "-preset", "ultrafast", "-g", "50",
+         "-c:a", "aac", "-f", "mpegts", str(path)],
+        check=True,
+    )  # fmt: skip
+    return path
+
+
+def ts_duration(path: Path) -> float:
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)],
+        capture_output=True, check=True, text=True,
+    )  # fmt: skip
+    return float(out.stdout.strip())
+
+
+@needs_ffmpeg
+async def test_appended_episode_has_continuous_timestamps(env):
+    """Each recording starts its timestamps near zero; the joined episode must report
+    the length of both pieces, not of the last one."""
+    app = await env()
+    tmp = env.tmp
+    quali = make_ts(tmp / "dvr" / "Formula 1 - S2026E1704 - Singapore Grand Prix – Qualifying.ts", 8)
+    filed = await app.replays.process_file(quali)
+    cont = make_ts(tmp / "dvr" / "Formula 1 - S2026E1788 - Singapore Grand Prix – Qualifying (continued).ts", 6)
+    r = await app.replays.process_file(cont)
+    assert r["outcome"] == "appended"
+    target = Path(filed["target"])
+    assert 13.5 < ts_duration(target) < 14.5
+    assert not cont.exists() and not list(target.parent.glob(".*joining"))
