@@ -57,6 +57,9 @@ class FakePMS:
                 Route("/library/metadata/{rk}/posters", self.poster_list, methods=["GET"]),
                 Route("/library/metadata/{rk}", self.metadata, methods=["GET"]),
                 Route("/library/metadata/{rk}", self.delete, methods=["DELETE"]),
+                Route("/library/metadata/{rk}/analyze", self.ok, methods=["PUT"]),
+                Route("/livetv/dvrs", self.dvrs, methods=["GET"]),
+                Route("/livetv/dvrs/{key}/reloadGuide", self.ok, methods=["POST"]),
             ]
         )
 
@@ -189,6 +192,22 @@ class FakePMS:
         self.episodes.pop(rk, None)
         self.deleted.append(rk)
         return Response(status_code=200)
+
+    # EPG-8: one DVR whose guide is Pitlane's (tests use advertised_url http://pitlane.invalid:5004)
+    GUIDE = "lineup://tv.plex.providers.epg.xmltv/http%3A%2F%2Fpitlane.invalid%3A5004%2Fxmltv.xml#My%20Guide"
+
+    async def dvrs(self, request: Request):
+        if err := self._record(request):
+            return err
+        return JSONResponse({"MediaContainer": {"size": 2, "Dvr": [{"key": "9", "lineup": self.GUIDE}, {"key": "3", "lineup": "lineup://other"}]}})
+
+    async def ok(self, request: Request):
+        if err := self._record(request):
+            return err
+        return Response(status_code=200)
+
+    def calls_to(self, method: str, suffix: str) -> list[str]:
+        return [c["path"] for c in self.calls if c["method"] == method and c["path"].endswith(suffix)]
 
     def written_strings(self) -> list[str]:
         """Every string value Pitlane wrote to PMS."""

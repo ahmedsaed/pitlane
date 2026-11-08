@@ -118,3 +118,26 @@ epg:
 On a weekend without a sprint the `SPRINT` entry simply produces nothing.
 
 The programme starts exactly where the session's slot ends, so the two recordings are back to back with nothing missed in between. Like every manual item it is a new supplementary episode (round × 100 + 10 + index, e.g. S2026E1812), so the single "Formula 1" series rule records it and replay filing puts it next to the race. With `anchor: end`, `offset` must be 0 or more: an earlier start would overlap the session, and overlaps are resolved by cutting the earlier programme, which would shorten the session's own recording.
+
+## Sessions that run late (EPG-8)
+
+The calendar only has scheduled times. When a session is delayed (rain, red flags), Plex would stop recording at the end of the guide slot and record the post-session programme over the live action.
+
+While a session is on, Pitlane follows F1 live timing (`livetiming.formula1.com`, SignalR Core websocket, no login; one connection, only from the session's start until it is over). Ten minutes (`lead`) before the session's guide slot ends, if live timing still shows that session (matched by its scheduled start) and it is not over, Pitlane adds a 30-minute (`block`) **"(continued)"** slot right after it, moves the `anchor: end` programmes behind it, and asks Plex to reload the guide (`POST /livetv/dvrs/{id}/reloadGuide` on the DVR whose guide is Pitlane's). It repeats near the end of each new slot, up to `max_blocks` slots.
+
+```yaml
+epg:
+  overrun:
+    enabled: true
+    block: 30m        # length of each "(continued)" slot
+    lead: 10m         # decide this long before the guide slot ends
+    max_blocks: 6     # at most 6 slots (3 h)
+```
+
+- **Why separate slots.** Plex does not move the stop of a recording that has already started when the guide changes; it keeps the old end **[observed 2026-11-07, PMS 1.43.5, Brazilian GP qualifying]**. It does schedule slots added a few minutes ahead.
+- **When a session is over.** `SessionStatus` `Finalised` or `Ends`; or `Finished`, except in qualifying (and sprint qualifying) before part 3 (`SessionData` `QualifyingPart`). Qualifying shows `Finished` after every part, also while the next part is delayed: on 2026-11-07 Q2 ended under a red flag at 20:05 UTC and Q3 had not started 30 minutes later. `Inactive` (before the start, breaks) and `Aborted` (red flag) mean it is not over.
+- **Numbering.** Slot k of the session in slot n of its round is supplementary index 59 + (n − 1) × 6 + k: episodes round × 100 + 70 … 99 (S2026E2088 is qualifying's first "(continued)" slot). Like other supplementary items they are new, so the series rule records them.
+- **Filing.** A "(continued)" recording is appended to its session's episode (MPEG-TS files concatenate), then Plex re-reads the file (`PUT /library/metadata/{id}/analyze`). Without the session's episode it goes to needs-review.
+- **No live timing** (service down, or it shows another session): nothing is added and the schedule applies. If the service starts requiring a login, the feature stops extending, it never breaks recordings.
+- A slot that was added is kept even if the session ends early inside it: it still records, and the post-session programme follows it.
+

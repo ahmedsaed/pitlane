@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 
 from .calendar.jolpica import Calendar
 from .config import ChannelCfg, Config
-from .models import Event, Session, SessionType, supplementary_episode_number
+from .models import Event, Session, SessionType, continuation_episode_number, supplementary_episode_number
 
 GENERATOR = "Pitlane"
 CHANNEL_SUFFIX = ".pitlane"
@@ -99,8 +99,12 @@ def guide_window(now: datetime, cfg: Config) -> tuple[datetime, datetime]:
     return midnight - timedelta(days=cfg.epg.days_back), midnight + timedelta(days=cfg.epg.days_ahead + 1)
 
 
-def _session_programmes(ch: ChannelCfg, cfg: Config, calendars: dict[str, Calendar]) -> list[Programme]:
+def _session_programmes(
+    ch: ChannelCfg, cfg: Config, calendars: dict[str, Calendar], overruns: dict[str, int] | None = None
+) -> list[Programme]:
     progs: list[Programme] = []
+    overruns = overruns or {}
+    block = cfg.epg.overrun.block
     cid = xmltv_channel_id(ch.id)
     for series_key in ch.series:
         cal = calendars.get(series_key)
@@ -128,6 +132,27 @@ def _session_programmes(ch: ChannelCfg, cfg: Config, calendars: dict[str, Calend
                         session=s,
                     )
                 )
+                # EPG-8: "(continued)" slots while live timing says the session is still running.
+                for k in range(1, overruns.get(s.id, 0) + 1):
+                    c_start = stop + (k - 1) * block
+                    progs.append(
+                        Programme(
+                            channel=cid,
+                            start=c_start,
+                            stop=c_start + block,
+                            title=series.title,
+                            sub_title=sub_title(ev, f"{s.title} (continued)" if k == 1 else f"{s.title} (continued {k})"),
+                            desc=description(ev),
+                            categories=("Sports", "Motorsport"),
+                            season=s.season,
+                            episode_no=continuation_episode_number(s.episode_no, k),
+                            date=c_start,
+                            new=True,
+                            official_start=c_start,
+                            event=ev,
+                            session=s,
+                        )
+                    )
             # EPG-7 manual programmes, anchored to a session type of each event.
             for m in cfg.epg.manual:
                 if m.channel != ch.id:
@@ -135,7 +160,10 @@ def _session_programmes(ch: ChannelCfg, cfg: Config, calendars: dict[str, Calend
                 anchor = ev.session(m.relative_to)
                 if anchor is None:
                     continue
-                base = session_window(anchor, cfg)[1] if m.anchor == "end" else anchor.starts_at
+                if m.anchor == "end":  # after the session, and after any "(continued)" slots
+                    base = session_window(anchor, cfg)[1] + overruns.get(anchor.id, 0) * block
+                else:
+                    base = anchor.starts_at
                 start = base + m.offset
                 progs.append(
                     Programme(
@@ -281,12 +309,13 @@ def build_programmes(
     calendars: dict[str, Calendar],
     now: datetime,
     base_url: str = "",
+    overruns: dict[str, int] | None = None,
 ) -> dict[str, list[Programme]]:
     w_start, w_end = guide_window(now, cfg)
     base_url = base_url.rstrip("/")
     result: dict[str, list[Programme]] = {}
     for ch in sorted(cfg.channels, key=lambda c: c.id):
-        all_progs = _resolve_overlaps(_session_programmes(ch, cfg, calendars))
+        all_progs = _resolve_overlaps(_session_programmes(ch, cfg, calendars, overruns))
         in_window = [p for p in all_progs if p.stop > w_start and p.start < w_end]
         # Filler looks at programmes after the window too, for the "Next:" label.
         fill = _fillers(ch, [p for p in all_progs if p.stop > w_start], w_start, w_end, cfg)
@@ -321,9 +350,12 @@ def _logo_url(ch: ChannelCfg, base_url: str) -> str | None:
     return f"{base_url}/static/logos/{ch.id}{PurePath(ch.logo).suffix}"
 
 
-def render_xmltv(cfg: Config, calendars: dict[str, Calendar], now: datetime, base_url: str) -> bytes:
+def render_xmltv(
+    cfg: Config, calendars: dict[str, Calendar], now: datetime, base_url: str, overruns: dict[str, int] | None = None
+) -> bytes:
+    """``overruns``: session id → number of "(continued)" slots (EPG-8)."""
     base_url = base_url.rstrip("/")
-    programmes = build_programmes(cfg, calendars, now, base_url)
+    programmes = build_programmes(cfg, calendars, now, base_url, overruns)
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<!DOCTYPE tv SYSTEM "xmltv.dtd">',

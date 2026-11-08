@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Awaitable, Callable
 
 from ..calendar.jolpica import Calendar
-from ..models import SESSION_TITLES, SUPP_BASE, Event, Session, SessionType
+from ..models import SESSION_TITLES, SUPP_BASE, Event, Session, SessionType, continuation_of
 from .parsing import EPISODE_RE, ParsedName, normalize, parse_episode, parse_name, resolve_events
 
 
@@ -31,6 +31,7 @@ class Match:
     episode_no: int | None  # None → filer allocates the next free SUPP index
     title: str
     step: str
+    continues: Session | None = None  # EPG-8: a "(continued)" slot, appended to this session
 
 
 @dataclass
@@ -218,6 +219,12 @@ class Matcher:
         ev = cal.event_by_round(season, rnd)
         if ev is None:
             return "no such event"
+        cont = continuation_of(episode_no)
+        if cont is not None:
+            parent = cal.session_by_episode(season, cont[0])
+            if parent is None:
+                return "no such session"
+            return Match(ev, parent.type, parent, episode_no, f"{parent.title} (continued)", "continuation", continues=parent)
         if SUPP_BASE < slot <= 99:
             title = _title_after_episode(path.stem, ev) or descriptive_title(path.stem, ev, self.series_title)
             return Match(ev, SessionType.SUPP, None, episode_no, title, "episode")

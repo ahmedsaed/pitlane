@@ -240,6 +240,22 @@ class FfmpegInput:
                 self.tracker.discard(self)
 
 
+class PipedFfmpeg(FfmpegInput):
+    """FfmpegInput whose stdin is a pipe we write the panel's bytes into."""
+
+    async def start(self) -> None:
+        self.proc = await asyncio.create_subprocess_exec(
+            *self.args,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            start_new_session=True,
+        )
+        if self.tracker:
+            self.tracker.add(self)
+        self._stderr_task = asyncio.get_running_loop().create_task(self._drain_stderr())
+
+
 class HttpInput:
     """Direct HTTP passthrough for ``tuner`` sources (no ffmpeg, docs/tuner.md)."""
 
@@ -678,10 +694,14 @@ class RelayResponse:
     (docs/tuner.md "Tuner slots", LIVE-9).
     """
 
-    def __init__(self, session: StreamSession, pool: TunerPool, on_done: Callable[[], Awaitable[None]] | None = None):
+    def __init__(
+        self, session: StreamSession, pool: TunerPool, on_done: Callable[[], Awaitable[None]] | None = None,
+        square_sd: bool = False,
+    ):
         self.session = session
         self.pool = pool
         self.on_done = on_done
+        self.square_sd = square_sd  # LIVE-13: re-encode anamorphic SD to square pixels
 
     async def __call__(self, scope: dict, receive: Callable, send: Callable) -> None:
         s = self.session
@@ -746,9 +766,19 @@ class RelayResponse:
                 "headers": [(b"content-type", b"video/mp2t"), (b"cache-control", b"no-cache")],
             }
         )
-        await send({"type": "http.response.body", "body": first, "more_body": True})
-        s.bytes_sent += len(first)
-        async for chunk in s.chunks():
+        body = _prepend(first, s.chunks())
+        # The play channel prepares its own video (vod/play.py); local files are what the operator chose.
+        if self.square_sd and not any(src.kind in ("vod", "file") for src in s.sources):
+            from .square import SquarePixels
+
+            body = SquarePixels(s.channel.id, s.tracker).run(body)
+        async for chunk in body:
             await send({"type": "http.response.body", "body": chunk, "more_body": True})
             s.bytes_sent += len(chunk)
         await send({"type": "http.response.body", "body": b"", "more_body": False})
+
+
+async def _prepend(first: bytes, rest: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
+    yield first
+    async for chunk in rest:
+        yield chunk

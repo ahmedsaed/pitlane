@@ -228,6 +228,21 @@ class PlexClient:
         p = md.get("parentRatingKey")
         return (str(gp) if gp else None, str(p) if p else None)
 
+    async def reload_guides(self, xmltv_url: str) -> list[str]:
+        """EPG-8: make every DVR whose guide is ``xmltv_url`` fetch it again. Returns their keys."""
+        from urllib.parse import quote
+
+        resp = await self._req("GET", "/livetv/dvrs")
+        dvrs = (resp.json().get("MediaContainer") or {}).get("Dvr") or []
+        keys = [str(d["key"]) for d in dvrs if quote(xmltv_url, safe="") in str(d.get("lineup", ""))]
+        for k in keys:
+            await self._req("POST", f"/livetv/dvrs/{k}/reloadGuide")
+        return keys
+
+    async def analyze(self, rating_key: str) -> None:
+        """Re-read the media (duration, streams) after the file changed."""
+        await self._req("PUT", f"/library/metadata/{rating_key}/analyze")
+
     async def delete_item(self, rating_key: str) -> None:
         """REP-8: deletion goes through PMS so the library stays consistent."""
         await self._req("DELETE", f"/library/metadata/{rating_key}")

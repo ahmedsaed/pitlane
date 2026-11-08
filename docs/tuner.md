@@ -103,6 +103,14 @@ all sources exhausted → reconnect to the last playing source (reconnect_attemp
 - A source that failed during a stream is reprobed immediately, outside the normal schedule.
 - When ffmpeg rejects an HTTP source with "Invalid data found when processing input", the server answered with something that is not media. The relay makes one GET of the source (first 4 KiB, within the tune deadline, holding the source's connection slot) and records what it was as the source's error, e.g. `not a media stream: HTTP 200 text/html from megaplusredirection.tedata.net (redirected), page title "Redirection Page"; an ISP quota/captive-portal page or a provider error page`. Only hosts are reported, never URL paths, which may carry credentials. Probes describe web pages and redirects the same way.
 
+### Anamorphic SD (LIVE-13)
+
+Some feeds drop to PAL SD: 720x576 stored pixels with a sample aspect ratio of 64:45, meaning "show at 16:9". Samsung TVs' system player ignores that flag, in Plex and in other apps, and shows the picture squeezed to ~5:4 **[observed 2026-11-07, Sky Sports F1 during the Brazilian GP]**. Plex only fixes it when it transcodes, which costs quality on everything else.
+
+With `tuners.square_sd: true` (default) the relay checks the picture with a local `ffprobe` on bytes it already has: the first ~1 MB at tune-in (held at most 1.5 s), then the latest ~1.5 MB every minute. While the picture is SD (576 lines or fewer) with non-square pixels, the bytes go through a local x264 encoder (deinterlace flagged frames, scale to the shape the flag says, e.g. 1024x576, keyframe every 2 s, audio copied). HD and square-pixel pictures are passed through byte for byte. If the feed changes format mid-stream, the next check switches the encoder on, off, or to the new size. Recordings made through Pitlane get the square picture too. The play channel and local files are not checked.
+
+When checking a file by hand, note that a still frame exported from it shows the stored pixels (squeezed) and that seeking into a file that started in HD can report the HD stream's 1:1 aspect for the SD part; read the SPS (`-bsf:v trace_headers`) or probe a slice cut from the SD part.
+
 ## Tuner slots
 
 - `tuners.count` (default 2) is advertised as `TunerCount`.

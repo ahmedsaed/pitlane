@@ -89,6 +89,7 @@ class App:
         self.jolpica: JolpicaClient = None  # type: ignore[assignment]
         self.reload_error: list[str] | None = None
         self.notifier: Any = None
+        self.overrun: Any = None  # EPG-8
         self._tasks: list[asyncio.Task] = []
         self._xmltv_cache: tuple[Any, bytes, str] | None = None
         self._reload_lock = asyncio.Lock()
@@ -120,7 +121,11 @@ class App:
             self.replays = ReplayPipeline(self)
             await self.replays.start(background=self.start_background)
         await self._start_vod()
+        from .overrun import OverrunTracker
+
+        self.overrun = OverrunTracker(self)
         if self.start_background:
+            self.overrun.start()
             self.health.start()
             self._spawn(self._calendar_loop(), "calendar")
             self._spawn(self._provider_refresh_loop(), "provider-refresh")
@@ -135,6 +140,8 @@ class App:
             except (asyncio.CancelledError, Exception):
                 pass
         self._tasks.clear()
+        if self.overrun:
+            await self.overrun.stop()
         if self.health:
             await self.health.stop()
         if self.replays:
@@ -349,12 +356,40 @@ class App:
             raise InputError("movies and shows are not configured")
         return await self.vod.open_play(tracker)
 
+    def overruns(self) -> dict[str, int]:
+        """EPG-8: session id → "(continued)" slots in the guide."""
+        return self.overrun.blocks() if self.overrun else {}
+
+    def guide_changed(self) -> None:
+        self._xmltv_cache = None
+
+    async def reload_plex_guide(self) -> None:
+        """Ask Plex to fetch the guide now (EPG-8); it reschedules recordings itself."""
+        plex = getattr(self.replays, "plex", None)
+        if plex is None:
+            log.warning("guide changed but Plex is not configured; Plex sees it at its next guide refresh")
+            return
+        url = self.base_url().rstrip("/") + "/xmltv.xml"
+        try:
+            dvrs = await plex.reload_guides(url)
+        except Exception as e:
+            log.warning("could not ask Plex to reload the guide", extra={"error": str(e)})
+            return
+        if not dvrs:
+            log.warning("no Plex DVR uses this guide", extra={"xmltv": url})
+        else:
+            log.info("asked Plex to reload the guide", extra={"dvrs": dvrs})
+
     def xmltv(self, base_url: str) -> tuple[bytes, str]:
         now = self.clock()
-        key = (now.date(), now.hour, base_url, id(self.cfg), tuple(c.updated_at for c in self.calendars.values()))
+        overruns = self.overruns()
+        key = (
+            now.date(), now.hour, base_url, id(self.cfg), tuple(c.updated_at for c in self.calendars.values()),
+            tuple(sorted(overruns.items())),
+        )  # fmt: skip
         if self._xmltv_cache and self._xmltv_cache[0] == key:
             return self._xmltv_cache[1], self._xmltv_cache[2]
-        body = render_xmltv(self.cfg, self.calendars, now, base_url)
+        body = render_xmltv(self.cfg, self.calendars, now, base_url, overruns)
         etag = etag_for(body)
         self._xmltv_cache = (key, body, etag)
         return body, etag

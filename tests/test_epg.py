@@ -333,3 +333,24 @@ def test_post_session_programmes_follow_the_session(calendar_2026):
     assert pq.start == quali.stop and pq.episode_no == 1711
     with pytest.raises(ConfigError):
         make_cfg(manual=[{"channel": "f1-main", "title": "x", "relative_to": "RACE", "anchor": "end", "offset": "-5m", "duration": "30m", "supplementary_index": 3}])
+
+
+def test_continued_slots_for_a_late_session(calendar_2026):
+    """EPG-8: "(continued)" slots follow the session's slot, each a new episode in the
+    reserved range, and the post-session show moves behind them."""
+    from pitlane.models import continuation_episode_number, continuation_of
+
+    assert [continuation_episode_number(1704, k) for k in (1, 2, 6)] == [1788, 1789, 1793]
+    assert continuation_of(1788) == (1704, 1) and continuation_of(1799) == (1705, 6)
+    assert continuation_of(1711) is None and continuation_of(1705) is None
+    cfg = make_cfg(manual=[
+        {"channel": "f1-main", "title": "Post-Qualifying Analysis", "relative_to": "QUALI", "anchor": "end", "duration": "30m", "supplementary_index": 1},
+    ])  # fmt: skip
+    progs = build_programmes(cfg, {"f1": calendar_2026}, datetime(2026, 10, 9, 8, tzinfo=UTC), overruns={"2026-17-QUALI": 2})["f1-main"]
+    quali = next(p for p in progs if p.sub_title == "Singapore Grand Prix – Qualifying")
+    c1 = next(p for p in progs if p.sub_title == "Singapore Grand Prix – Qualifying (continued)")
+    c2 = next(p for p in progs if p.sub_title == "Singapore Grand Prix – Qualifying (continued 2)")
+    pq = next(p for p in progs if p.sub_title == "Singapore Grand Prix – Post-Qualifying Analysis")
+    assert (c1.start, c1.stop - c1.start, c1.episode_no, c1.new) == (quali.stop, timedelta(minutes=30), 1788, True)
+    assert (c2.start, c2.episode_no) == (c1.stop, 1789)
+    assert pq.start == c2.stop

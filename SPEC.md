@@ -48,6 +48,7 @@ Pitlane is a single long-running service that connects operator-configured motor
 - **LIVE-9** All active streams MUST stop within 5 s of the client disconnecting. No orphaned `ffmpeg` processes.
 - **LIVE-10** A provider MAY set `max_connections`. Pitlane MUST then never hold more upstream connections to that provider (stream inputs and health probes together) than the limit: streams take precedence over probes, a provider whose connections are all streaming is not probed, and on failover the old connection is closed before the next one to the same provider opens. A tune that finds the provider busy tries the channel's other sources first, then waits for a connection to free up within `tune_timeout`. Many IPTV accounts allow one connection, and a second one kicks the first off **[verified 2026-10-10, Xtream Codes panel]**.
 - **LIVE-12** The operator MUST be able to free a limited provider's connection from the UI (e.g. to use the account in another app): Pitlane ends that provider's streams, pauses its download, and opens no connection to it (stream, probe or download) until the chosen time has passed or the operator resumes it. Tunes during the hold get 503.
+- **LIVE-13** A live stream whose picture is SD (576 lines or fewer) with non-square pixels (e.g. 720x576 flagged 16:9) SHOULD be re-encoded to square pixels (1024x576), because some players (Samsung TVs) ignore the flag and show it squeezed. Every other picture MUST pass through unchanged. Detection uses only bytes already received; it MUST NOT open extra upstream connections. Configurable with `tuners.square_sd`.
 - **LIVE-11** A provider MAY set `health_checks: false`. Pitlane MUST then send no probe to its sources (scheduled, after a failure, or at tune time). Its sources stay in their last state, and at tune time they are tried directly in priority order, so opening the stream is the check. This keeps request volume to a provider at one connection per tune.
 
 ### 2.3 Guide (EPG)
@@ -59,6 +60,7 @@ Pitlane is a single long-running service that connects operator-configured motor
 - **EPG-5** Gaps between sessions MUST be filled with filler programmes so that Plex never shows "no guide data" for a channel.
 - **EPG-6** Every session programme MUST use the same series title (default `Formula 1`) so that a single Plex "record series" rule captures all sessions.
 - **EPG-7** Operators MAY add manual programmes (e.g. a pre-race show) through config. These appear as supplementary items.
+- **EPG-8** A session still running at the end of its guide slot (per F1 live timing) SHOULD get extra "(continued)" guide slots until it is over, so the DVR keeps recording; the recordings MUST be appended to the session's episode. Without live timing data the schedule applies.
 
 ### 2.4 Replays (REP)
 

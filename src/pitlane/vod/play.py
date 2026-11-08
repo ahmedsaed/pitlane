@@ -24,7 +24,7 @@ import httpx
 
 from ..logging import get_logger
 from ..providers.base import describe_non_media, looks_like_page
-from ..relay import CHUNK, FfmpegInput, InputError, ProcessTracker, ffmpeg_binary
+from ..relay import CHUNK, FfmpegInput, InputError, PipedFfmpeg, ProcessTracker, ffmpeg_binary
 
 if TYPE_CHECKING:
     from .manager import VodManager
@@ -126,22 +126,6 @@ def pipe_args(reencode: bool = False, vcodec: str | None = None) -> list[str]:
     return play_args("pipe:0", reencode, vcodec)
 
 
-class _PipedFfmpeg(FfmpegInput):
-    """FfmpegInput whose stdin is a pipe we write the panel's bytes into."""
-
-    async def start(self) -> None:
-        self.proc = await asyncio.create_subprocess_exec(
-            *self.args,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            start_new_session=True,
-        )
-        if self.tracker:
-            self.tracker.add(self)
-        self._stderr_task = asyncio.get_running_loop().create_task(self._drain_stderr())
-
-
 class PlayInput:
     """Relay input for the play channel: same interface as FfmpegInput."""
 
@@ -156,7 +140,7 @@ class PlayInput:
         self.save_to = save_to  # final library path, or None
         self.reencode = reencode  # True / False / "auto"
         self.vcodec = vcodec
-        self.ff: _PipedFfmpeg | None = None
+        self.ff: PipedFfmpeg | None = None
         self._prefix = b""
         self._chunks: Any = None
         self.stderr_tail: deque[str] = deque(maxlen=5)
@@ -188,7 +172,7 @@ class PlayInput:
         self.total = int(cl) if cl and cl.isdigit() else None
         self._chunks = resp.aiter_bytes()
         reencode = await self._decide()
-        self.ff = _PipedFfmpeg(pipe_args(reencode, self.vcodec), self.tracker)
+        self.ff = PipedFfmpeg(pipe_args(reencode, self.vcodec), self.tracker)
         if self.save_to is not None:
             self._watch = Path(str(self.save_to) + ".watch")
             self._watch.parent.mkdir(parents=True, exist_ok=True)

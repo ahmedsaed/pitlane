@@ -191,8 +191,9 @@ async def read_bytes(resp: httpx.Response, n: int, timeout: float) -> bytes:
 
 
 def assert_ts(data: bytes) -> None:
-    off = data.find(b"\x47")
-    assert off >= 0 and all(data[off + k * 188] == 0x47 for k in range(min(50, (len(data) - off) // 188)))
+    # The relay forwards 64 KiB reads, so a read can start mid-packet: find the first real sync point.
+    n = min(50, len(data) // 188 - 1)
+    assert any(all(data[off + k * 188] == 0x47 for k in range(n)) for off in range(188))
 
 
 async def wait_until(pred, timeout: float, step: float = 0.05) -> bool:

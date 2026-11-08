@@ -28,6 +28,8 @@ from .spoilers import RESULT_KIND, episode_title, results_text, revealed_summary
 if TYPE_CHECKING:
     from ..app import App
 
+RETENTION_EVERY = timedelta(hours=6)
+
 log = get_logger("replays")
 
 MIN_SIZE = 5 * 1024 * 1024
@@ -113,6 +115,7 @@ class ReplayPipeline:
                 loop.create_task(self._watch_loop(), name="inbox-watch"),
                 loop.create_task(self._spoiler_loop(), name="spoiler-sync"),
                 loop.create_task(self._download_loop(), name="replay-poll"),
+                loop.create_task(self._retention_loop(), name="replay-retention"),
             ]
 
     async def stop(self) -> None:
@@ -252,6 +255,8 @@ class ReplayPipeline:
             if isinstance(m, NoMatch):
                 dest = await self._to_review(path, m.reason, m.candidates, sha)
                 return {"outcome": "needs_review", "reason": m.reason, "candidates": m.candidates, "path": str(dest)}
+            if m.continues is not None:
+                return await self._append_continuation(path, m, sha)
             try:
                 res = await self.filer.file(path, m, sha256=sha)
             except Exception as e:
@@ -276,6 +281,28 @@ class ReplayPipeline:
                 if self.plex:
                     await self.apply_plex(res.target, m, res.episode_no)
             return {"outcome": res.outcome, "target": str(res.target), "step": m.step, "episode_no": res.episode_no}
+
+    async def _append_continuation(self, path: Path, m: Match, sha: str | None) -> dict[str, Any]:
+        """EPG-8: a "(continued)" recording is the same broadcast, cut where the session's
+        guide slot ended. Append it to the session's episode (MPEG-TS concatenates)."""
+        s = m.continues
+        assert s is not None
+        row = self.app.state.one("SELECT * FROM library_items WHERE session_id=? ORDER BY filed_at DESC LIMIT 1", (s.id,))
+        target = Path(row["path"]) if row else None
+        if row is None or target is None or not target.exists() or target.suffix.lower() != path.suffix.lower():
+            dest = await self._to_review(path, "continuation without its session", [s.id], sha)
+            return {"outcome": "needs_review", "reason": "continuation without its session", "path": str(dest)}
+        await asyncio.to_thread(_append_file, path, target)
+        path.unlink()
+        new_sha = await sha256_async(target)
+        self.app.state.execute("UPDATE library_items SET sha256=? WHERE path=?", (new_sha, row["path"]))
+        log.info("continuation appended", extra={"file": path.name, "target": str(target), "episode": m.episode_no})
+        if self.plex and row["plex_rating_key"]:
+            try:
+                await self.plex.analyze(row["plex_rating_key"])  # new duration
+            except Exception as e:
+                log.warning("could not refresh the episode in Plex", extra={"file": target.name, "error": str(e)})
+        return {"outcome": "appended", "target": str(target), "step": m.step, "episode_no": m.episode_no}
 
     async def _to_review(self, path: Path, reason: str, candidates: list[str], sha: str | None) -> Path:
         self.review_dir.mkdir(parents=True, exist_ok=True)
@@ -614,17 +641,21 @@ class ReplayPipeline:
 
     # ------------------------------------------------------------------ retention (REP-8)
     async def retention_once(self, current_season: int | None = None) -> list[dict[str, Any]]:
-        """Items older than N seasons per session type. Dry-run logs them only."""
+        """Items older than N seasons, or filed longer ago than ``max_age``, per session
+        type. Dry-run logs them only."""
         rc = self.app.cfg.retention
         if not rc.enabled:
             return []
-        current = current_season or self.app.clock().year
+        now = self.app.clock()
+        current = current_season or now.year
         doomed = []
-        for row in self.app.state.query("SELECT * FROM library_items"):
-            keep = rc.keep.get(SessionType(row["session_type"]), "all")
-            if keep == "all":
-                continue
-            if row["season"] <= current - int(keep):
+        for row in self.app.state.query("SELECT * FROM library_items ORDER BY path"):
+            stype = SessionType(row["session_type"])
+            keep = rc.keep.get(stype, "all")
+            too_old = keep != "all" and row["season"] <= current - int(keep)
+            age = rc.max_age.get(stype)
+            filed = _parse_iso(row["filed_at"])
+            if too_old or (age is not None and filed is not None and now - filed > age):
                 doomed.append(row)
         for row in doomed:
             if rc.dry_run:
@@ -640,6 +671,29 @@ class ReplayPipeline:
             except Exception as e:
                 log.error("retention delete failed", extra={"path": row["path"], "error": str(e)})
         return doomed
+
+    async def _retention_loop(self) -> None:
+        while True:
+            try:
+                await self.retention_once()
+            except Exception:
+                log.exception("retention failed")
+            await asyncio.sleep(RETENTION_EVERY.total_seconds())
+
+
+def _append_file(src: Path, dst: Path) -> None:
+    with src.open("rb") as i, dst.open("ab") as o:
+        shutil.copyfileobj(i, o, 8 * 1024 * 1024)
+        o.flush()
+        os.fsync(o.fileno())
+
+
+def _parse_iso(value: str | None) -> datetime | None:
+    try:
+        dt = datetime.fromisoformat(value) if value else None
+    except ValueError:
+        return None
+    return dt.replace(tzinfo=UTC) if dt is not None and dt.tzinfo is None else dt
 
 
 def utcnow() -> datetime:

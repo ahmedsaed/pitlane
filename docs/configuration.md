@@ -20,6 +20,7 @@ tuners:
   tune_timeout: 10s
   stall_timeout: 8s                # IPTV panels that send live video in bursts need more (e.g. 30s); see docs/tuner.md
   reconnect_attempts: 2            # when every source failed mid-stream: retries of the last playing one (1 s apart)
+  square_sd: true                  # re-encode SD flagged as anamorphic (720x576 shown at 16:9) to square pixels; HD is never touched
   device_name: Pitlane
 
 health:
@@ -79,6 +80,7 @@ epg:
   durations: { FP1: 60m, FP2: 60m, FP3: 60m, SQ: 45m, SPRINT: 60m, QUALI: 60m, RACE: 120m }
   filler_max: 6h                 # filler block length; blocks start at local midnight (epg.timezone) + multiples of this
   manual: []                     # extra programmes per weekend, e.g. post-race shows (anchor: end); see docs/epg.md
+  overrun: { enabled: true, block: 30m, lead: 10m, max_blocks: 6 }   # "(continued)" slots for late sessions (EPG-8)
 
 replays:
   inboxes:
@@ -112,6 +114,7 @@ retention:
   enabled: false
   dry_run: true
   keep: { RACE: all, QUALI: all, SPRINT: all, SQ: 2, FP1: 1, FP2: 1, FP3: 1, SUPP: 1 }
+  max_age: {}                        # also delete items filed longer ago than this, e.g. { FP1: 30d, SUPP: 30d }
 
 plugins:
   dir: /config/plugins

@@ -69,6 +69,29 @@ def supplementary_episode_number(round_: int, index: int) -> int:
     return round_ * 100 + SUPP_BASE + index
 
 
+# EPG-8: "(continued)" slots of a session that runs late use supplementary indexes 60..89:
+# six per session, for the session in slot 1..5 of its round (episode round x 100 + slot).
+CONTINUATION_FIRST = 60
+CONTINUATION_SLOTS = 6
+
+
+def continuation_episode_number(session_episode: int, k: int) -> int:
+    """Episode number of the ``k``-th (1-based) "(continued)" slot of a session."""
+    rnd, slot = divmod(session_episode, 100)
+    if not 1 <= slot <= 5 or not 1 <= k <= CONTINUATION_SLOTS:
+        raise ValueError("continuation outside the reserved range")
+    return supplementary_episode_number(rnd, CONTINUATION_FIRST - 1 + (slot - 1) * CONTINUATION_SLOTS + k)
+
+
+def continuation_of(episode_no: int) -> tuple[int, int] | None:
+    """``(session episode number, k)`` for a "(continued)" episode number, else None."""
+    rnd, slot = divmod(episode_no, 100)
+    idx = slot - SUPP_BASE - CONTINUATION_FIRST
+    if not 0 <= idx < 5 * CONTINUATION_SLOTS:
+        return None
+    return rnd * 100 + idx // CONTINUATION_SLOTS + 1, idx % CONTINUATION_SLOTS + 1
+
+
 @dataclass
 class Event:
     id: str  # "2026-16"

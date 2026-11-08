@@ -117,6 +117,11 @@ retention:
     FP2: 1
     FP3: 1
     SUPP: 1
+  max_age:         # also delete items filed longer ago than this
+    FP1: 30d
+    SUPP: 30d
 ```
+
+Retention runs at start-up and every 6 hours. Age is counted from when the item was filed (`library_items.filed_at`). `SUPP` covers every supplementary item, including the post-session programmes.
 
 Deletion goes through PMS (`DELETE /library/metadata/{ratingKey}`, when "allow media deletion" is enabled in Plex) so the library stays consistent. Dry-run logs what would be deleted and shows the list in the UI.

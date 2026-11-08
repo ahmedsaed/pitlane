@@ -155,7 +155,7 @@ def ui_router(app: "App") -> APIRouter:
         from ..xmltv import build_programmes
 
         now = app.clock()
-        progs = build_programmes(app.cfg, app.calendars, now)
+        progs = build_programmes(app.cfg, app.calendars, now, overruns=app.overruns())
         rows = []
         for ch_id, plist in progs.items():
             for p in plist:

@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import os
 import subprocess
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -459,6 +459,24 @@ async def test_retention_dry_run_and_delete(env):
     assert env.pms.deleted == ["55"]
 
 
+async def test_retention_max_age(env):
+    app = await env(retention={"enabled": True, "dry_run": False, "keep": {}, "max_age": {"FP1": "30d", "SUPP": "30d"}})
+    now = app.clock()
+    old, recent = (now - timedelta(days=31)).isoformat(), (now - timedelta(days=5)).isoformat()
+    app.state.execute(
+        "INSERT INTO library_items(path, session_id, season, episode_no, session_type, sha256, plex_rating_key, filed_at)"
+        " VALUES (?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?), (?,?,?,?,?,?,?,?)",
+        ("/l/fp1-old", "2026-1-FP1", 2026, 101, "FP1", "a", "61", old,
+         "/l/fp1-new", "2026-2-FP1", 2026, 201, "FP1", "b", "62", recent,
+         "/l/race-old", "2026-1-RACE", 2026, 105, "RACE", "c", "63", old,
+         "/l/post-old", "2026-1-SUPP", 2026, 112, "SUPP", "d", "64", old),
+    )  # fmt: skip
+    doomed = await app.replays.retention_once()
+    assert sorted(d["path"] for d in doomed) == ["/l/fp1-old", "/l/post-old"]
+    assert sorted(env.pms.deleted) == ["61", "64"]
+    assert {r["path"] for r in app.state.query("SELECT path FROM library_items")} == {"/l/fp1-new", "/l/race-old"}
+
+
 async def test_identical_content_for_different_session_goes_to_review(env, caplog):
     """REP-3 regression: a correctly parsed qualifying file that is byte-identical to an
     already filed race must not be deleted; it goes to needs-review as a duplicate, and
@@ -645,3 +663,119 @@ async def test_poster_check_decodes_real_pms_keys(env, caplog):
     # a selected media:// bundle thumbnail alone is not our card
     ep.poster_list = [real[1] | {"selected": True}]
     assert await app.replays.plex.poster_selected_upload(ep.rating_key) is False
+
+
+# ------------------------------------------------------------------ EPG-8 sessions that run late
+
+
+class ScriptedFeed:
+    """Stands in for LiveTiming: what live timing says right now."""
+
+    def __init__(self) -> None:
+        self.session = None
+
+    def fresh(self) -> bool:
+        return self.session is not None
+
+
+async def test_late_session_gets_continued_slots(env):
+    from pitlane.livetiming import LiveSession
+    from pitlane.xmltv import build_programmes, session_window
+
+    app = await env(epg={"overrun": {"max_blocks": 2}})
+    feed = ScriptedFeed()
+    app.overrun.feed_factory = lambda: feed
+    s = app.calendar.session("2026-17-QUALI")
+    end = session_window(s, app.cfg)[1]
+    say = lambda status: LiveSession(1, "Qualifying", "Qualifying", s.starts_at, status)  # noqa: E731
+
+    await app.overrun.tick(end - timedelta(minutes=9))  # no live timing: the schedule applies
+    assert app.overruns() == {}
+    feed.session = LiveSession(1, "Practice", "Practice 3", s.starts_at - timedelta(hours=3), "Started")
+    await app.overrun.tick(end - timedelta(minutes=9))  # live timing is about another session
+    assert app.overruns() == {}
+    feed.session = say("Aborted")  # red flag
+    await app.overrun.tick(end - timedelta(minutes=15))
+    assert app.overruns() == {}  # not yet: 10 min lead
+    await app.overrun.tick(end - timedelta(minutes=9))
+    assert app.overruns() == {"2026-17-QUALI": 1}
+    assert env.pms.calls_to("POST", "/reloadGuide") == ["/livetv/dvrs/9/reloadGuide"]  # only Pitlane's DVR
+    progs = build_programmes(app.cfg, app.calendars, s.starts_at, overruns=app.overruns())["f1-main"]
+    assert any(p.sub_title == "Singapore Grand Prix – Qualifying (continued)" for p in progs)
+    await app.overrun.tick(end - timedelta(minutes=5))
+    assert app.overruns() == {"2026-17-QUALI": 1}  # the new slot runs until end + 30 min
+    await app.overrun.tick(end + timedelta(minutes=21))
+    await app.overrun.tick(end + timedelta(minutes=51))
+    assert app.overruns() == {"2026-17-QUALI": 2}  # max_blocks
+    feed.session = say("Finalised")
+    await app.overrun.tick(end + timedelta(minutes=55))
+    assert app.overrun.current(end + timedelta(minutes=56)) is None  # ended: no longer watched
+    assert len(env.pms.calls_to("POST", "/reloadGuide")) == 2
+
+
+async def test_finished_between_qualifying_parts_is_not_the_end(env):
+    """2026-11-07: Q2 ended under a red flag ("Finished") and Q3 started 40+ min later."""
+    from pitlane.livetiming import LiveSession
+    from pitlane.xmltv import session_window
+
+    app = await env()
+    feed = ScriptedFeed()
+    app.overrun.feed_factory = lambda: feed
+    s = app.calendar.session("2026-17-QUALI")
+    end = session_window(s, app.cfg)[1]
+    feed.session = LiveSession(1, "Qualifying", "Qualifying", s.starts_at, "Finished", part=2)
+    await app.overrun.tick(end - timedelta(minutes=9))
+    await app.overrun.tick(end + timedelta(minutes=21))
+    assert app.overruns() == {"2026-17-QUALI": 2}  # still watched after 30 min of "Finished"
+    feed.session = LiveSession(1, "Qualifying", "Qualifying", s.starts_at, "Finished", part=3)
+    await app.overrun.tick(end + timedelta(minutes=40))
+    assert app.overrun.current(end + timedelta(minutes=41)) is None
+    assert app.overruns() == {"2026-17-QUALI": 2}
+
+
+def test_live_session_over():
+    from pitlane.livetiming import LiveSession
+
+    race = lambda st: LiveSession(1, "Race", "Race", None, st)  # noqa: E731
+    sq = lambda st, part: LiveSession(1, "Qualifying", "Sprint Qualifying", None, st, part)  # noqa: E731
+    assert race("Finished").over and race("Finalised").over and not race("Aborted").over and not race("Inactive").over
+    assert not sq("Finished", 1).over and not sq("Finished", None).over and sq("Finished", 3).over and sq("Ends", 2).over
+
+
+def test_live_timing_messages():
+    """Message shapes as the service sent them on 2026-11-07."""
+    from pitlane.livetiming import RS, LiveTiming
+
+    lt = LiveTiming()
+    lt.handle("{}" + RS)  # handshake
+    lt.handle(
+        '{"type":3,"invocationId":"0","result":{"SessionInfo":{"Key":11408,"Type":"Qualifying","Name":"Qualifying",'
+        '"StartDate":"2026-11-07T15:00:00","EndDate":"2026-11-07T16:00:00","GmtOffset":"-03:00:00"},'
+        '"SessionStatus":{"Status":"Inactive","Started":"Finished"},'
+        '"SessionData":{"Series":[{"Utc":"2026-11-07T17:46:47Z","QualifyingPart":1},{"Utc":"2026-11-07T19:47:59Z","QualifyingPart":2}]}}}'
+        + RS
+    )
+    s = lt.session
+    assert s is not None and s.starts_at == datetime(2026, 11, 7, 18, 0, tzinfo=UTC)
+    assert (s.status, s.part, s.over) == ("Inactive", 2, False)
+    lt.handle('{"type":1,"target":"feed","arguments":["SessionStatus",{"Status":"Started","Started":"Started"},"2026-11-07T19:49:00Z"]}' + RS)
+    lt.handle('{"type":1,"target":"feed","arguments":["SessionData",{"Series":{"2":{"Utc":"2026-11-07T20:20:00Z","QualifyingPart":3}}},"x"]}' + RS + '{"type":6}' + RS)
+    lt.handle('{"type":1,"target":"feed","arguments":["SessionStatus",{"Status":"Finished"},"x"]}' + RS)
+    assert (lt.session.status, lt.session.part, lt.session.over) == ("Finished", 3, True)
+
+
+async def test_continued_recording_is_appended_to_its_session(env):
+    app = await env()
+    tmp = env.tmp
+    a, b = os.urandom(5000), os.urandom(3000)
+    quali = write_media(tmp / "dvr" / "Formula 1 - S2026E1704 - Singapore Grand Prix – Qualifying.ts", content=a)
+    filed = await app.replays.process_file(quali)
+    assert filed["outcome"] == "filed"
+    cont = write_media(tmp / "dvr" / "Formula 1 - S2026E1788 - Singapore Grand Prix – Qualifying (continued).ts", content=b)
+    r = await app.replays.process_file(cont)
+    assert r["outcome"] == "appended" and r["target"] == filed["target"]
+    assert Path(filed["target"]).read_bytes() == a + b and not cont.exists()
+    assert len(env.pms.calls_to("PUT", "/analyze")) == 1
+    orphan = write_media(tmp / "dvr" / "Formula 1 - S2026E1782 - Singapore Grand Prix – Practice 3 (continued).ts")
+    r = await app.replays.process_file(orphan)
+    assert r["outcome"] == "needs_review"

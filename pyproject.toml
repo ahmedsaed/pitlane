@@ -19,6 +19,7 @@ dependencies = [
     "prometheus-client>=0.20",
     "psutil>=5.9",
     "pillow>=10.1",
+    "websockets>=13",
 ]
 
 [project.optional-dependencies]

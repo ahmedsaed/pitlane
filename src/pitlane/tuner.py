@@ -110,7 +110,7 @@ def tuner_router(app: "App") -> APIRouter:
             app.metrics.tuner_rejections.inc()
             return PlainTextResponse("All tuners in use\n", status_code=503)  # LIVE-4
         app.metrics.streams_active.set(len(app.pool.in_use))
-        return _AsgiAdapter(RelayResponse(session, app.pool))
+        return _AsgiAdapter(RelayResponse(session, app.pool, square_sd=app.cfg.tuners.square_sd))
 
     return r
 

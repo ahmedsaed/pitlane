@@ -94,6 +94,9 @@ class TunersCfg(Strict):
     # LIVE-7: when every source has failed mid-stream, reconnect to the last one that was
     # playing this many times (1 s apart) before ending the stream. Reset after 30 s of play.
     reconnect_attempts: int = Field(2, ge=0, le=10)
+    # LIVE-13: SD pictures flagged as anamorphic (720x576 shown at 16:9) are re-encoded to
+    # square pixels (1024x576). Samsung TVs ignore the flag and show them squeezed.
+    square_sd: bool = True
     device_name: str = "Pitlane"
     # docs/tuner.md: ModelNumber/FirmwareName "are configurable in case PMS behavior changes". # QA-007
     model_number: str = "HDTC-2US"
@@ -312,6 +315,16 @@ def _post_roll(v: Any) -> Any:
     return v
 
 
+class OverrunCfg(Strict):
+    """EPG-8: sessions that run late (red flags, rain) get "(continued)" slots in the guide
+    while F1 live timing says they are still running (docs/epg.md "Sessions that run late")."""
+
+    enabled: bool = True
+    block: Duration = timedelta(minutes=30)  # length of each "(continued)" slot
+    lead: Duration = timedelta(minutes=10)  # decide this long before the guide slot ends
+    max_blocks: int = Field(6, ge=1, le=6)  # 6 x 30 min = 3 h at most
+
+
 class EpgCfg(Strict):
     days_back: int = Field(1, ge=0, le=30)
     days_ahead: int = Field(14, ge=0, le=60)
@@ -322,6 +335,7 @@ class EpgCfg(Strict):
     durations: dict[SessionType, Duration] = Field(default_factory=dict)
     filler_max: Duration = timedelta(hours=6)
     manual: list[ManualProgrammeCfg] = Field(default_factory=list)
+    overrun: OverrunCfg = Field(default_factory=OverrunCfg)
     # QA-002 / QA-007: zone used for the "{local time}" in filler sub-titles. Not in
     # configuration.md; default UTC keeps output identical to having no option.
     timezone: str = "UTC"
@@ -429,6 +443,8 @@ class RetentionCfg(Strict):
             SessionType.SUPP: 1,
         }
     )
+    # Also delete items filed longer ago than this, per session type (e.g. FP1: 30d).
+    max_age: dict[SessionType, Duration] = Field(default_factory=dict)
 
 
 class PluginsCfg(Strict):
