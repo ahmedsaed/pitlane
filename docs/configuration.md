@@ -21,6 +21,8 @@ tuners:
   stall_timeout: 8s                # IPTV panels that send live video in bursts need more (e.g. 30s); see docs/tuner.md
   reconnect_attempts: 2            # when every source failed mid-stream: retries of the last playing one (1 s apart)
   square_sd: true                  # re-encode SD flagged as anamorphic (720x576 shown at 16:9) to square pixels; HD is never touched
+  keep_formats: true               # convert back when the provider changes codecs mid-recording (LIVE-14)
+  gpu: auto                        # VAAPI render node for those conversions: auto | off | /dev/dri/renderD128
   device_name: Pitlane
 
 health:

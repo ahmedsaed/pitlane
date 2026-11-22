@@ -3,8 +3,9 @@
 # Debian trixie ships ffmpeg 7.x (SPEC §4 requires ffmpeg >= 6).
 FROM python:3.12-slim-trixie
 
+# mesa-va-drivers: VAAPI for live conversions on AMD/Intel GPUs (LIVE-14; needs /dev/dri in the container).
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ffmpeg tini \
+ && apt-get install -y --no-install-recommends ffmpeg tini mesa-va-drivers \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

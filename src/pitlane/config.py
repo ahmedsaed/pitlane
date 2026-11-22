@@ -97,6 +97,11 @@ class TunersCfg(Strict):
     # LIVE-13: SD pictures flagged as anamorphic (720x576 shown at 16:9) are re-encoded to
     # square pixels (1024x576). Samsung TVs ignore the flag and show them squeezed.
     square_sd: bool = True
+    # LIVE-14: keep the video/audio formats a recording started with when the provider
+    # changes them mid-recording (Plex mislabels the rest otherwise); convert only then.
+    keep_formats: bool = True
+    # Render node for those conversions (VAAPI): "auto" (/dev/dri/renderD128 if usable), "off", or a path.
+    gpu: str = "auto"
     device_name: str = "Pitlane"
     # docs/tuner.md: ModelNumber/FirmwareName "are configurable in case PMS behavior changes". # QA-007
     model_number: str = "HDTC-2US"

@@ -697,11 +697,17 @@ class RelayResponse:
     def __init__(
         self, session: StreamSession, pool: TunerPool, on_done: Callable[[], Awaitable[None]] | None = None,
         square_sd: bool = False,
+        keep_formats: bool = False,
+        locks: Any = None,
+        gpu: str | None = None,
     ):
         self.session = session
         self.pool = pool
         self.on_done = on_done
-        self.square_sd = square_sd  # LIVE-13: re-encode anamorphic SD to square pixels
+        self.square_sd = square_sd  # LIVE-13: re-encode squeezed SD to square pixels
+        self.keep_formats = keep_formats  # LIVE-14: keep a recording's formats across provider changes
+        self.locks = locks
+        self.gpu = gpu
 
     async def __call__(self, scope: dict, receive: Callable, send: Callable) -> None:
         s = self.session
@@ -768,10 +774,13 @@ class RelayResponse:
         )
         body = _prepend(first, s.chunks())
         # The play channel prepares its own video (vod/play.py); local files are what the operator chose.
-        if self.square_sd and not any(src.kind in ("vod", "file") for src in s.sources):
-            from .square import SquarePixels
+        if (self.square_sd or self.keep_formats) and not any(src.kind in ("vod", "file") for src in s.sources):
+            from .convert import LiveConverter
 
-            body = SquarePixels(s.channel.id, s.tracker).run(body)
+            conv = LiveConverter(
+                s.channel.id, s.tracker, locks=self.locks, gpu=self.gpu, square_sd=self.square_sd, keep_formats=self.keep_formats
+            )
+            body = conv.run(body)
         async for chunk in body:
             await send({"type": "http.response.body", "body": chunk, "more_body": True})
             s.bytes_sent += len(chunk)

@@ -90,6 +90,10 @@ class App:
         self.reload_error: list[str] | None = None
         self.notifier: Any = None
         self.overrun: Any = None  # EPG-8
+        from .convert import FormatLocks, find_gpu
+
+        self.format_locks = FormatLocks()  # LIVE-14
+        self.gpu = find_gpu(cfg.tuners.gpu)
         self._tasks: list[asyncio.Task] = []
         self._xmltv_cache: tuple[Any, bytes, str] | None = None
         self._reload_lock = asyncio.Lock()
@@ -129,6 +133,8 @@ class App:
             self.health.start()
             self._spawn(self._calendar_loop(), "calendar")
             self._spawn(self._provider_refresh_loop(), "provider-refresh")
+        if self.cfg.tuners.keep_formats or self.cfg.tuners.square_sd:
+            log.info("live conversion", extra={"gpu": self.gpu or "none (CPU)"})
         log.info("pitlane started", extra={"channels": len(self.cfg.channels), "providers": len(self.cfg.provider_cfgs)})
 
     async def shutdown(self) -> None:
